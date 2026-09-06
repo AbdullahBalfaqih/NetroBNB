@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { ArrowUpRight, ArrowUp, Sparkles, X, RotateCcw, Copy, Check, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useCrypto } from "@/context/CryptoContext";
+import { useCrypto, ALL_CRYPTO_CATALOG } from "@/context/CryptoContext";
 
 interface MessageAction {
   action_type: string;
@@ -212,20 +212,47 @@ export const AskCoreAICard: React.FC = () => {
         throw new Error(res ? `API responded with status ${res.status}` : "API unavailable");
       }
     } catch {
-      const isGreeting = /^(hi|hello|hey|greetings|yo)/i.test(query.trim());
+      const isArabic = /[\u0600-\u06FF]/.test(query);
+      const isGreeting = /^(hi|hello|hey|greetings|yo|مرحبا|أهلا|اهلا|السلام عليكم)/i.test(query.trim());
       const coinSym = detected || selectedCoin.symbol;
-      const coinName = selectedCoin.name;
-      const coinPrice = liveMarket?.price ? `$${liveMarket.price.toLocaleString()}` : `$${selectedCoin.fallbackPrice || 79934}`;
-      const coinChg = liveMarket?.priceChange || "+0.28%";
+      const coinConfig =
+        ALL_CRYPTO_CATALOG.find((c) => c.symbol.toUpperCase() === coinSym.toUpperCase()) || selectedCoin;
+      const coinName = coinConfig.name;
+
+      const coinPrice =
+        coinSym.toUpperCase() === selectedCoin.symbol.toUpperCase() && liveMarket?.price
+          ? `$${liveMarket.price.toLocaleString("en-US", { maximumFractionDigits: 2 })}`
+          : `$${coinConfig.fallbackPrice.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+      const coinChg =
+        coinSym.toUpperCase() === selectedCoin.symbol.toUpperCase() && liveMarket?.priceChange
+          ? liveMarket.priceChange
+          : "+0.45%";
 
       let fallbackText = "";
-      if (isGreeting) {
-        fallbackText = `Hello! I am NetroAI, your intelligent autonomous agent for real-time crypto telemetry on Binance Spot and BNB Smart Chain. How can I assist your market analysis today?`;
-      } else {
-        fallbackText = `Live Market Telemetry for ${coinName} (${coinSym}) via Binance Spot:
+      let suggestedActions = [];
 
-Current Price: ${coinPrice} (24h Change: ${coinChg})
-Orderflow & Momentum: Stable consolidation channel with sustained taker volume absorption. Depth and liquidity indicators support instant non-custodial execution on BNB Smart Chain.`;
+      if (isArabic) {
+        if (isGreeting) {
+          fallbackText = `مرحباً بك! أنا NetroAI، مستشارك الذكي للبيانات الفورية لأسواق العملات الرقمية عبر شبكة بينانس سبوت وسلسلة BNB Smart Chain. كيف يمكنني مساعدتك اليوم؟`;
+        } else {
+          fallbackText = `بيانات السوق الفورية لـ ${coinName} (${coinSym}):\n\nالسعر الحالي: ${coinPrice} (التغير: ${coinChg})\nحركة الأوامر والسيولة: استقرار عند مستويات الدعم الحالية مع تماسك مستمر في التدفقات النقدية عبر شبكة بينانس.`;
+        }
+        suggestedActions = [
+          `تحليل اتجاه ${coinSym} خلال 24 ساعة`,
+          `ما أسباب تحرك ${coinSym} اليوم؟`,
+          `فحص عمق دفتر الأوامر لـ ${coinSym}`,
+        ];
+      } else {
+        if (isGreeting) {
+          fallbackText = `Hello! I am NetroAI, your intelligent autonomous agent for real-time crypto telemetry on Binance Spot and BNB Smart Chain. How can I assist your market analysis today?`;
+        } else {
+          fallbackText = `Live Market Telemetry for ${coinName} (${coinSym}) via Binance Spot:\n\nCurrent Price: ${coinPrice} (24h Change: ${coinChg})\nOrderflow & Momentum: Stable consolidation channel with sustained taker volume absorption. Depth and liquidity indicators support instant non-custodial execution on BNB Smart Chain.`;
+        }
+        suggestedActions = [
+          `Analyze ${coinSym} 24h Trend`,
+          `Why is ${coinSym} moving?`,
+          `Inspect ${coinSym} Orderbook Depth`,
+        ];
       }
 
       const fallbackMsg: Message = {
@@ -233,11 +260,7 @@ Orderflow & Momentum: Stable consolidation channel with sustained taker volume a
         sender: "assistant",
         text: fallbackText,
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        suggested_actions: [
-          `Analyze ${coinSym} 24h Trend`,
-          `Why is ${coinSym} moving?`,
-          `Inspect ${coinSym} Orderbook Depth`,
-        ],
+        suggested_actions: suggestedActions,
       };
       setMessages((prev) => [...prev, fallbackMsg]);
     } finally {
