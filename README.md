@@ -47,7 +47,7 @@ Digital asset trading often suffers from emotional bias, delayed telemetry, and 
 ## System Architecture Flow
 
 <p align="center">
-  <img src="./public/architecture-diagram.png" alt="NetroBNB System Architecture Flow" width="100%" style="border-radius: 20px;" />
+  <img src="./public/architecture-diagram-v2.png" alt="NetroBNB System Architecture Flow" width="100%" style="border-radius: 20px;" />
 </p>
 
 ---

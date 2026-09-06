@@ -2,107 +2,110 @@ const sharp = require('sharp');
 
 async function generateArchitectureDiagram() {
   const width = 1200;
-  const height = 640;
+  const height = 690;
 
   const svg = `
   <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="cardBg" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stop-color="#161616" />
-        <stop offset="100%" stop-color="#101010" />
+      <linearGradient id="bgYellow" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#F9DE38" />
+        <stop offset="45%" stop-color="#F4D014" />
+        <stop offset="100%" stop-color="#D4AC0D" />
       </linearGradient>
-      <linearGradient id="activeCardBg" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="#242110" />
-        <stop offset="100%" stop-color="#141308" />
-      </linearGradient>
-      <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#F4D014" />
-      </marker>
-      <marker id="arrowMuted" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#666666" />
-      </marker>
+      <filter id="cardShadow" x="-5%" y="-5%" width="110%" height="115%">
+        <feDropShadow dx="0" dy="6" stdDeviation="12" flood-color="#000000" flood-opacity="0.14" />
+      </filter>
     </defs>
 
-    <!-- Canvas Background -->
-    <rect width="${width}" height="${height}" rx="24" fill="#0A0A0A" />
-    <rect width="${width - 2}" height="${height - 2}" x="1" y="1" rx="23" fill="none" stroke="#222222" stroke-width="1.5" />
+    <!-- Canvas Background: Pure Saturated Netro Yellow -->
+    <rect width="${width}" height="${height}" rx="32" fill="url(#bgYellow)" />
+    <rect width="${width - 4}" height="${height - 4}" x="2" y="2" rx="30" fill="none" stroke="#FFF9C4" stroke-width="2" stroke-opacity="0.8" />
 
-    <!-- Section Header Inside Canvas -->
-    <g transform="translate(60, 48)">
-      <circle cx="0" cy="0" r="4" fill="#F4D014" />
-      <text x="14" y="4" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#F4D014" letter-spacing="1">System Architecture Flow</text>
-      <text x="0" y="32" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="800" fill="#FFFFFF" letter-spacing="-0.5">End-to-End Agentic Execution Pipeline</text>
+    <!-- Subtle warm radial illumination -->
+    <circle cx="980" cy="180" r="280" fill="#FFF176" opacity="0.35" />
+    <circle cx="200" cy="520" r="220" fill="#E6BE0A" opacity="0.2" />
+
+    <!-- Section Header (Clean Dark Typography) -->
+    <g transform="translate(70, 52)">
+      <rect x="0" y="0" width="165" height="26" rx="13" fill="#1C1C1C" fill-opacity="0.09" />
+      <text x="14" y="18" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" fill="#1C1C1C" letter-spacing="1">System Architecture</text>
+      <text x="0" y="54" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="32" font-weight="900" fill="#1C1C1C" letter-spacing="-1">End-to-End Agentic Execution Pipeline</text>
     </g>
 
-    <!-- Layer 1: Client & Frontend (Top) -->
-    <g transform="translate(60, 115)">
-      <rect width="1080" height="76" rx="16" fill="url(#cardBg)" stroke="#262626" stroke-width="1" />
-      <rect x="20" y="18" width="8" height="40" rx="4" fill="#F4D014" />
-      <text x="44" y="40" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="17" font-weight="800" fill="#FFFFFF">User Interface &amp; Telemetry Canvas</text>
-      <text x="44" y="60" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13.5" font-weight="400" fill="#999999">Next.js 16 &#8226; NetroAI Natural Language Chat &#8226; Wagmi &amp; Reown Web3 Wallet &#8226; Framer Motion</text>
+    <!-- Layer 1: Client & Frontend (Top Card) -->
+    <g transform="translate(70, 130)" filter="url(#cardShadow)">
+      <rect width="1060" height="74" rx="16" fill="#181818" />
+      <rect x="18" y="18" width="6" height="38" rx="3" fill="#F4D014" />
+      <text x="38" y="38" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16.5" font-weight="800" fill="#FFFFFF">User Interface &amp; Telemetry Canvas</text>
+      <text x="38" y="58" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="400" fill="#B3B3B3">Next.js 16 &#8226; NetroAI Natural Language Chat &#8226; Wagmi &amp; Reown Web3 Wallet &#8226; Framer Motion</text>
     </g>
 
-    <!-- Arrows Down to Middle Layer -->
-    <path d="M 330 191 L 330 235" stroke="#F4D014" stroke-width="2" marker-end="url(#arrow)" />
-    <path d="M 870 191 L 870 235" stroke="#F4D014" stroke-width="2" marker-end="url(#arrow)" />
+    <!-- Connector 1: Layer 1 to Layer 2 (1 to 2 Tree Bus) -->
+    <path d="M 600 204 L 600 228 M 328 228 L 872 228 M 328 228 L 328 248 M 872 228 L 872 248" 
+          stroke="#1C1C1C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <polygon points="328,255 322,243 334,243" fill="#1C1C1C" />
+    <polygon points="872,255 866,243 878,243" fill="#1C1C1C" />
 
-    <!-- Layer 2: Core Intelligence & Orchestration (Middle Split) -->
-    <!-- Left: Cognitive LLM Core -->
-    <g transform="translate(60, 240)">
-      <rect width="525" height="104" rx="16" fill="url(#cardBg)" stroke="#262626" stroke-width="1" />
-      <circle cx="32" cy="34" r="5" fill="#F4D014" />
-      <text x="48" y="38" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="800" fill="#FFFFFF">Cognitive Core (OpenRouter)</text>
-      <text x="32" y="66" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="400" fill="#999999">Multi-turn reasoning &#8226; Financial synthesis</text>
-      <text x="32" y="88" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="400" fill="#999999">Intent extraction &#8226; Prompt injection defense</text>
+    <!-- Layer 2: Core Intelligence (Split Middle) -->
+    <!-- Left: Cognitive Core -->
+    <g transform="translate(70, 256)" filter="url(#cardShadow)">
+      <rect width="515" height="96" rx="16" fill="#181818" />
+      <circle cx="28" cy="30" r="4.5" fill="#F4D014" />
+      <text x="44" y="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15.5" font-weight="800" fill="#FFFFFF">Cognitive Core (OpenRouter)</text>
+      <text x="28" y="58" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12.5" font-weight="400" fill="#B3B3B3">Multi-turn reasoning &#8226; Financial synthesis</text>
+      <text x="28" y="78" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12.5" font-weight="400" fill="#B3B3B3">Intent classification &#8226; Prompt injection defense</text>
     </g>
 
-    <!-- Right: Agent Orchestrator -->
-    <g transform="translate(615, 240)">
-      <rect width="525" height="104" rx="16" fill="url(#cardBg)" stroke="#262626" stroke-width="1" />
-      <circle cx="32" cy="34" r="5" fill="#F4D014" />
-      <text x="48" y="38" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="800" fill="#FFFFFF">Agent Engine &amp; Planner (FastAPI)</text>
-      <text x="32" y="66" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="400" fill="#999999">Multi-step execution planner &#8226; Memory service</text>
-      <text x="32" y="88" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="400" fill="#999999">9-factor behavioral engine &#8226; Tool router</text>
+    <!-- Right: Agent Engine -->
+    <g transform="translate(615, 256)" filter="url(#cardShadow)">
+      <rect width="515" height="96" rx="16" fill="#181818" />
+      <circle cx="28" cy="30" r="4.5" fill="#F4D014" />
+      <text x="44" y="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15.5" font-weight="800" fill="#FFFFFF">Agent Engine &amp; Planner (FastAPI)</text>
+      <text x="28" y="58" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12.5" font-weight="400" fill="#B3B3B3">Multi-step execution planner &#8226; Memory service</text>
+      <text x="28" y="78" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12.5" font-weight="400" fill="#B3B3B3">9-factor behavioral engine &#8226; Tool router</text>
     </g>
 
-    <!-- Arrows Converging Down to MCP Layer -->
-    <path d="M 330 344 L 540 385" stroke="#F4D014" stroke-width="2" marker-end="url(#arrow)" />
-    <path d="M 870 344 L 660 385" stroke="#F4D014" stroke-width="2" marker-end="url(#arrow)" />
+    <!-- Connector 2: Layer 2 to Layer 3 (2 to 1 Merge Bus) -->
+    <path d="M 328 352 L 328 376 M 872 352 L 872 376 M 328 376 L 872 376 M 600 376 L 600 398" 
+          stroke="#1C1C1C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <polygon points="600,405 594,393 606,393" fill="#1C1C1C" />
 
-    <!-- Layer 3: Binance Agent OS MCP Layer (Highlighted) -->
-    <g transform="translate(60, 390)">
-      <rect width="1080" height="92" rx="16" fill="url(#activeCardBg)" stroke="#F4D014" stroke-width="1.5" stroke-opacity="0.4" />
-      <rect x="20" y="24" width="8" height="44" rx="4" fill="#F4D014" />
-      <text x="44" y="46" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="900" fill="#F4D014">Binance Agent OS MCP Layer (Model Context Protocol)</text>
-      <text x="44" y="70" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13.5" font-weight="500" fill="#D1D5DB">agent.binance.com/mcp/agentic &#8226; get_price &#8226; get_24hr_ticker &#8226; get_orderbook &#8226; get_klines &#8226; Circuit Breaker</text>
+    <!-- Layer 3: Binance Agent OS MCP Layer (Center Feature Card) -->
+    <g transform="translate(70, 406)" filter="url(#cardShadow)">
+      <rect width="1060" height="90" rx="16" fill="#111111" stroke="#F4D014" stroke-width="1.5" stroke-opacity="0.6" />
+      <rect x="18" y="20" width="6" height="50" rx="3" fill="#F4D014" />
+      <text x="38" y="42" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="17.5" font-weight="900" fill="#F4D014">Binance Agent OS MCP Layer (Model Context Protocol)</text>
+      <text x="38" y="66" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="500" fill="#D1D5DB">agent.binance.com/mcp/agentic &#8226; get_price &#8226; get_24hr_ticker &#8226; get_orderbook &#8226; get_klines &#8226; Circuit Breaker</text>
     </g>
 
-    <!-- Arrows Down to Final Execution Layer -->
-    <path d="M 330 482 L 330 520" stroke="#F4D014" stroke-width="2" marker-end="url(#arrow)" />
-    <path d="M 870 482 L 870 520" stroke="#F4D014" stroke-width="2" marker-end="url(#arrow)" />
+    <!-- Connector 3: Layer 3 to Layer 4 (1 to 2 Tree Bus) -->
+    <path d="M 600 496 L 600 520 M 328 520 L 872 520 M 328 520 L 328 540 M 872 520 L 872 540" 
+          stroke="#1C1C1C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <polygon points="328,547 322,535 334,535" fill="#1C1C1C" />
+    <polygon points="872,547 866,535 878,535" fill="#1C1C1C" />
 
-    <!-- Layer 4: Physical Infrastructure (Bottom Split) -->
+    <!-- Layer 4: Infrastructure & Settlement (Split Bottom) -->
     <!-- Left: Binance Spot Engine -->
-    <g transform="translate(60, 525)">
-      <rect width="525" height="74" rx="14" fill="url(#cardBg)" stroke="#262626" stroke-width="1" />
-      <text x="24" y="36" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15.5" font-weight="800" fill="#FFFFFF">Binance Spot Market Infrastructure</text>
-      <text x="24" y="56" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12.5" font-weight="400" fill="#888888">Orderbook depth &#8226; Taker orderflow &#8226; 300+ pairs live telemetry</text>
+    <g transform="translate(70, 548)" filter="url(#cardShadow)">
+      <rect width="515" height="74" rx="14" fill="#181818" />
+      <text x="24" y="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="800" fill="#FFFFFF">Binance Spot Market Infrastructure</text>
+      <text x="24" y="54" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="400" fill="#999999">Orderbook depth &#8226; Taker orderflow &#8226; 300+ pairs live telemetry</text>
     </g>
 
     <!-- Right: BNB Smart Chain -->
-    <g transform="translate(615, 525)">
-      <rect width="525" height="74" rx="14" fill="url(#cardBg)" stroke="#262626" stroke-width="1" />
-      <text x="24" y="36" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15.5" font-weight="800" fill="#FFFFFF">BNB Smart Chain (BSC) Settlement</text>
-      <text x="24" y="56" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12.5" font-weight="400" fill="#888888">Non-custodial swaps &#8226; Smart route discovery &#8226; Instant settlement</text>
+    <g transform="translate(615, 548)" filter="url(#cardShadow)">
+      <rect width="515" height="74" rx="14" fill="#181818" />
+      <text x="24" y="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="800" fill="#FFFFFF">BNB Smart Chain (BSC) Settlement</text>
+      <text x="24" y="54" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="400" fill="#999999">Non-custodial swaps &#8226; Smart route discovery &#8226; Instant settlement</text>
     </g>
   </svg>
   `;
 
   await sharp(Buffer.from(svg))
     .png({ quality: 95 })
-    .toFile('public/architecture-diagram.png');
+    .toFile('public/architecture-diagram-v2.png');
 
-  console.log('Created public/architecture-diagram.png');
+  console.log('Created public/architecture-diagram-v2.png with structured bus connectors');
 }
 
 generateArchitectureDiagram().catch(console.error);
