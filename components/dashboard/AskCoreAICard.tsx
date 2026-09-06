@@ -80,7 +80,7 @@ const TypewriterText: React.FC<TypewriterProps> = ({ phrases, className = "" }) 
 };
 
 export const AskCoreAICard: React.FC = () => {
-  const { selectedCoin, setSelectedCoinBySymbol, detectCoin } = useCrypto();
+  const { selectedCoin, setSelectedCoinBySymbol, detectCoin, liveMarket } = useCrypto();
 
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [prompt, setPrompt] = useState("");
@@ -215,8 +215,8 @@ export const AskCoreAICard: React.FC = () => {
       const isGreeting = /^(hi|hello|hey|greetings|yo)/i.test(query.trim());
       const coinSym = detected || selectedCoin.symbol;
       const coinName = selectedCoin.name;
-      const coinPrice = selectedCoin.price ? `$${selectedCoin.price.toLocaleString()}` : "$79,934";
-      const coinChg = selectedCoin.change24h !== undefined ? `${selectedCoin.change24h >= 0 ? "+" : ""}${selectedCoin.change24h.toFixed(2)}%` : "+0.28%";
+      const coinPrice = liveMarket?.price ? `$${liveMarket.price.toLocaleString()}` : `$${selectedCoin.fallbackPrice || 79934}`;
+      const coinChg = liveMarket?.priceChange || "+0.28%";
 
       let fallbackText = "";
       if (isGreeting) {

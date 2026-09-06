@@ -13,12 +13,12 @@ import { AskCoreAICard } from "@/components/dashboard/AskCoreAICard";
 import { CryptoMarketCard } from "@/components/dashboard/CryptoMarketCard";
 import { NewRequestModal } from "@/components/modals/NewRequestModal";
 
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
@@ -29,14 +29,14 @@ export default function Home() {
     },
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 12 },
     show: {
       opacity: 1,
       y: 0,
       transition: {
         duration: 0.45,
-        ease: [0.16, 1, 0.3, 1],
+        ease: "easeOut",
       },
     },
   };
