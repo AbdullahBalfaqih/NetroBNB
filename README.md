@@ -59,33 +59,62 @@ NetroBNB implements a multi-tier agentic architecture designed for high-concurre
 
 ---
 
-## Core Capabilities
+## Core Capabilities & Features
 
-### 1. Binance Agent OS MCP Integration
+### 1. Autonomous Orderflow & Intelligence Tracking
+
+NetroAI connects to Binance Spot infrastructure via Binance Agent OS MCP tools to automatically monitor taker flow, orderbook depth imbalances, and whale accumulation in real time.
+
+<p align="center">
+  <img src="./public/card-orderflow.png" alt="Autonomous Orderflow Tracking" width="100%" style="border-radius: 16px;" />
+</p>
+
 - **Direct Protocol Compliance:** Native JSON-RPC 2.0 client communicating directly with the official Binance Agent OS endpoint (`https://agent.binance.com/mcp/agentic`).
 - **Telemetry Observability:** Every analytical tool call records unique run IDs, execution latency, and source provenance indicators (`BINANCE_AGENT_OS_MCP` vs local fallback).
 - **Graceful Fault Tolerance:** Built-in circuit breakers ensure 100% uptime with deterministic failover to Binance REST endpoints if remote MCP relays experience upstream congestion.
 
-### 2. NetroAI Autonomous Agent
-- **Grounded Market Intelligence:** Combines raw Binance ticker feeds, order book imbalance, and whale positioning metrics into actionable synthesis.
-- **Conversational Awareness:** Distinguishes casual user dialogue from explicit asset queries, maintaining stateful context across conversations.
-- **Strict Formatting Guardrails:** Produces clean, professional financial outputs without ungrounded hallucinations or unnecessary decoration.
+---
 
-### 3. Quantitative Risk & Asset Health Engine
-- **Behavioral Telemetry Scoring:** Evaluates assets across 9 weighted parameters including accumulation acceleration, taker order flow aggression, and VWAP stability.
+### 2. Deterministic Behavioral Scoring Engine
+
+Eliminate emotional guesswork. Our 9-factor quantitative engine evaluates momentum-flow divergences, holding duration, and liquidity stress across all tracked pairs.
+
+<p align="center">
+  <img src="./public/card-scoring.png" alt="Deterministic Asset Scoring Engine" width="100%" style="border-radius: 16px;" />
+</p>
+
+- **Multi-Factor Synthesis:** 9 weighted analytical dimensions evaluate market microstructure, whale inflows, and orderbook pressure.
 - **Liquidity Stress Diagnostics:** Measures order book bid depth within 2% of mid-market price to prevent execution slippage.
+- **Grounded Verification:** Scores are deterministic and explainable, backed by live verifiable Binance order flow metrics.
 
-### 4. Non-Custodial Web3 Execution
-- Fully non-custodial DEX swap interface integrated on BNB Smart Chain.
-- Seamless connection via Reown AppKit and Wagmi v3.
-- Parameterized slippage tolerance, gas estimation, and automated route discovery.
+---
+
+### 3. Data-Driven Market Insights & Routing
+
+Don't just react, anticipate. Real-time predictive telemetry identifies institutional liquidity shifts and prepares risk-mitigated BSC execution routes.
+
+<p align="center">
+  <img src="./public/card-insights.png" alt="Data-Driven Market Insights" width="100%" style="border-radius: 16px;" />
+</p>
+
+- **Smart Predictions:** Instant anomaly detection against 30-day statistical baselines.
+- **Decentralized Settlement:** Non-custodial DEX swap interface integrated on BNB Smart Chain.
+- **Execution Safety:** Parameterized slippage tolerance, gas estimation, and automated route discovery.
+
+---
+
+### 4. 100% Verifiable Autonomous Intelligence
+
+<p align="center">
+  <img src="./public/card-confidence.png" alt="100% Autonomous Intelligence" width="100%" style="border-radius: 16px;" />
+</p>
 
 ---
 
 ## Repository Structure
 
 ```
-dashboard3/
+NetroBNB/
 ├── app/                              # Next.js 16 App Router
 │   ├── api/v1/chat/route.ts          # Agent conversational gateway & OpenRouter bridge
 │   ├── api/v1/assets/[symbol]/       # Real-time asset telemetry endpoints
