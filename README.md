@@ -44,54 +44,11 @@ Digital asset trading often suffers from emotional bias, delayed telemetry, and 
 
 ---
 
-## Architecture Diagram
+## System Architecture Flow
 
-```
-+-------------------------------------------------------------------------+
-|                           User / Web3 Client                            |
-+-------------------------------------------------------------------------+
-                                    |
-                                    v
-+-------------------------------------------------------------------------+
-|                  NetroBNB Unified Dashboard (Next.js 16)                |
-|       - Real-time Asset Intelligence Telemetry Canvas                   |
-|       - NetroAI Multi-turn Natural Language Conversational Interface    |
-|       - Web3 Decentralized Swap Widget (Wagmi / Reown AppKit)           |
-+-------------------------------------------------------------------------+
-                                    |
-            +-----------------------+-----------------------+
-            |                                               |
-            v                                               v
-+-----------------------+               +-------------------------------+
-|  OpenRouter LLM Core  |               |    FastAPI Agent Engine       |
-|  - Reasoning Models   |               |    - Master Orchestrator      |
-|  - Financial Analysis |               |    - Multi-Step Task Planner  |
-|  - Natural Language   |               |    - Memory & Security Filter |
-+-----------------------+               +-------------------------------+
-            |                                               |
-            +-----------------------+-----------------------+
-                                    |
-                                    v
-+-------------------------------------------------------------------------+
-|                    Binance Agent OS MCP Layer                           |
-|       Endpoint: https://agent.binance.com/mcp/agentic                   |
-|       - get_price             (Live Spot Ticker Execution)              |
-|       - get_24hr_ticker       (Rolling 24H Statistical Telemetry)       |
-|       - get_orderbook         (L2 Liquidity & Bid/Ask Depth)            |
-|       - get_klines            (Multi-timeframe Structural OHLCV)        |
-|       - get_book_ticker       (Best Bid/Offer Volumetric Depth)         |
-|       - Automatic Circuit Breaker & High-Availability Fallback          |
-+-------------------------------------------------------------------------+
-                                    |
-            +-----------------------+-----------------------+
-            |                                               |
-            v                                               v
-+-----------------------+               +-------------------------------+
-|  Binance Spot Engine  |               |   BNB Smart Chain (BSC)       |
-|  - Real-time Orderbook|               |   - Decentralized Routing     |
-|  - Whale Flow Tracking|               |   - Low-latency Settlement    |
-+-----------------------+               +-------------------------------+
-```
+<p align="center">
+  <img src="./public/architecture-diagram.png" alt="NetroBNB System Architecture Flow" width="100%" style="border-radius: 20px;" />
+</p>
 
 ---
 
