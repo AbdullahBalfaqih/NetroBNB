@@ -373,75 +373,11 @@ export const CryptoProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     lastTickDirection: null,
   });
 
-  // Fetch full list of Binance symbols dynamically to support 480+ coins
-  useEffect(() => {
-    const fetchAllBinanceCoins = async () => {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
-        const res = await fetch("https://api.binance.com/api/v3/exchangeInfo", {
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-
-        if (res.ok) {
-          const data = await res.json();
-          const usdtSymbols: string[] = data.symbols
-            .filter((s: any) => s.quoteAsset === "USDT" && s.status === "TRADING")
-            .map((s: any) => s.baseAsset);
-
-          const catalogMap = new Map(ALL_CRYPTO_CATALOG.map((c) => [c.symbol.toUpperCase(), c]));
-          const combined: CryptoConfig[] = usdtSymbols.map((sym: string) => {
-            const existing = catalogMap.get(sym.toUpperCase());
-            if (existing) return existing;
-            return {
-              id: sym.toLowerCase(),
-              name: `${sym}`,
-              symbol: sym,
-              tradingViewSymbol: `BINANCE:${sym}USDT`,
-              fallbackPrice: 1.0,
-              marketCapEst: "Binance Spot",
-              allTimeHigh: "Live Feed",
-              circulatingSupply: "Live",
-            };
-          });
-
-          const priority = [
-            "BTC", "ETH", "SOL", "AVAX", "TON", "BNB", "XRP", "DOGE", "ADA", "SUI",
-            "LINK", "TRX", "LTC", "POL", "SHIB", "PEPE", "NEAR", "DOT", "APT",
-            "TAO", "UNI"
-          ];
-
-          combined.sort((a, b) => {
-            const aIdx = priority.indexOf(a.symbol);
-            const bIdx = priority.indexOf(b.symbol);
-            if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
-            if (aIdx !== -1) return -1;
-            if (bIdx !== -1) return 1;
-            return a.symbol.localeCompare(b.symbol);
-          });
-
-          setAllCoins(combined);
-        }
-      } catch {
-        // Fallback silently to predefined ALL_CRYPTO_CATALOG catalog
-      }
-    };
-    fetchAllBinanceCoins();
-  }, []);
-
-  // Fetch live market data for the current active coin
+  // Fetch live market data for the current active coin via local proxy route
   const fetchLiveMarket = useCallback(async (symbol: string) => {
     try {
-      const pair = `${symbol.toUpperCase()}USDT`;
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
-      const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${pair}`, {
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-
-      if (res.ok) {
+      const res = await fetch(`/api/v1/ticker?symbol=${encodeURIComponent(symbol)}`).catch(() => null);
+      if (res && res.ok) {
         const ticker = await res.json();
         const price = parseFloat(ticker.lastPrice);
         const changePct = parseFloat(ticker.priceChangePercent);
@@ -455,7 +391,7 @@ export const CryptoProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             dir = price >= prev.price ? "up" : "down";
           }
           return {
-            price,
+            price: price || prev.price,
             priceChange: `${changePct >= 0 ? "+" : ""}${changePct.toFixed(2)}%`,
             isPositive: changePct >= 0,
             high24h: high >= 1000
@@ -474,12 +410,12 @@ export const CryptoProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, []);
 
-  // Periodic polling for live prices
+  // Lightweight periodic polling for live price
   useEffect(() => {
     fetchLiveMarket(selectedCoin.symbol);
     const interval = setInterval(() => {
       fetchLiveMarket(selectedCoin.symbol);
-    }, 4000);
+    }, 6000);
     return () => clearInterval(interval);
   }, [selectedCoin.symbol, fetchLiveMarket]);
 

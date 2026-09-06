@@ -21,6 +21,21 @@ const queryClient = new QueryClient({
   },
 });
 
+// Suppress non-critical third-party Web3Modal telemetry/quota warnings
+if (typeof window !== "undefined") {
+  window.addEventListener("unhandledrejection", (event) => {
+    const msg = event.reason?.message || String(event.reason || "");
+    if (
+      msg.includes("Failed to fetch") ||
+      msg.includes("project-limits") ||
+      msg.includes("web3modal") ||
+      msg.includes("403")
+    ) {
+      event.preventDefault();
+    }
+  });
+}
+
 import { http } from "wagmi";
 
 // 3. Define supported networks as non-empty tuple

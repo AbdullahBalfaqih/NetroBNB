@@ -212,8 +212,7 @@ export const AskCoreAICard: React.FC = () => {
         throw new Error(res ? `API responded with status ${res.status}` : "API unavailable");
       }
     } catch {
-      const isGreeting = /^(مرحبا|مرحباً|أهلاً|اهلا|سلام|السلام عليكم|هلا|صباح الخير|مساء الخير|hi|hello|hey)/i.test(query.trim());
-      const isArabic = /[\u0600-\u06FF]/.test(query);
+      const isGreeting = /^(hi|hello|hey|greetings|yo)/i.test(query.trim());
       const coinSym = detected || selectedCoin.symbol;
       const coinName = selectedCoin.name;
       const coinPrice = selectedCoin.price ? `$${selectedCoin.price.toLocaleString()}` : "$79,934";
@@ -221,17 +220,9 @@ export const AskCoreAICard: React.FC = () => {
 
       let fallbackText = "";
       if (isGreeting) {
-        fallbackText = isArabic
-          ? "أهلاً بك. أنا NetroAI، وكيلك الذكي لتحليل وتتبع بيانات Binance وBNB Chain المباشرة. كيف يمكنني مساعدتك في استفساراتك اليوم؟"
-          : "Hello! I am NetroAI, your intelligent autonomous agent for crypto market intelligence. How can I assist you today?";
+        fallbackText = `Hello! I am NetroAI, your intelligent autonomous agent for real-time crypto telemetry on Binance Spot and BNB Smart Chain. How can I assist your market analysis today?`;
       } else {
-        fallbackText = isArabic
-          ? `تحليل حركة ${coinName} (${coinSym}) اللحظية وفق بيانات Binance Spot:
-
-السعر الحالي: ${coinPrice} (تغير 24 ساعة: ${coinChg})
-النطاق والزخم: يستقر السعر ضمن نطاق تماسك إيجابي مع تدفقات شراء مستمرة وامتصاص لعمليات جني الأرباح.
-دفتر الطلبات: عمق السيولة متوازن وجاهز لتأكيد عمليات المبادلة السريعة عبر شبكة BNB Smart Chain.`
-          : `Live Market Telemetry for ${coinName} (${coinSym}) via Binance Spot:
+        fallbackText = `Live Market Telemetry for ${coinName} (${coinSym}) via Binance Spot:
 
 Current Price: ${coinPrice} (24h Change: ${coinChg})
 Orderflow & Momentum: Stable consolidation channel with sustained taker volume absorption. Depth and liquidity indicators support instant non-custodial execution on BNB Smart Chain.`;
@@ -243,9 +234,9 @@ Orderflow & Momentum: Stable consolidation channel with sustained taker volume a
         text: fallbackText,
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         suggested_actions: [
-          `تحليل عمق دفتر طلبات ${coinSym}`,
-          `مقارنة حركة ${coinSym} مع BNB`,
-          `فحص سيولة الحيتان`,
+          `Analyze ${coinSym} 24h Trend`,
+          `Why is ${coinSym} moving?`,
+          `Inspect ${coinSym} Orderbook Depth`,
         ],
       };
       setMessages((prev) => [...prev, fallbackMsg]);
@@ -594,10 +585,11 @@ Orderflow & Momentum: Stable consolidation channel with sustained taker volume a
             {activeSuggestions.slice(0, 2).map((suggestion, sIdx) => {
               const getSubtitle = (text: string) => {
                 const lower = text.toLowerCase();
-                if (lower.includes("24h") || lower.includes("analyze")) return "24h Trend";
-                if (lower.includes("moving") || lower.includes("why")) return "Whale Flow";
+                if (lower.includes("24h") || lower.includes("trend")) return "24h Trend";
+                if (lower.includes("moving") || lower.includes("why") || lower.includes("whale") || lower.includes("flow")) return "Whale Flow";
+                if (lower.includes("depth") || lower.includes("orderbook")) return "Orderbook Depth";
                 if (lower.includes("compare")) return "Compare";
-                if (lower.includes("strategy")) return "Strategy";
+                if (lower.includes("strategy") || lower.includes("route")) return "Smart Route";
                 return "Analysis";
               };
 
@@ -897,10 +889,11 @@ Orderflow & Momentum: Stable consolidation channel with sustained taker volume a
                   {activeSuggestions.slice(0, 4).map((suggestion, sIdx) => {
                     const getSubtitle = (text: string) => {
                       const lower = text.toLowerCase();
-                      if (lower.includes("24h") || lower.includes("analyze")) return "24h Trend";
-                      if (lower.includes("moving") || lower.includes("why")) return "Whale Flow";
+                      if (lower.includes("24h") || lower.includes("trend")) return "24h Trend";
+                      if (lower.includes("moving") || lower.includes("why") || lower.includes("whale") || lower.includes("flow")) return "Whale Flow";
+                      if (lower.includes("depth") || lower.includes("orderbook")) return "Orderbook Depth";
                       if (lower.includes("compare")) return "Compare";
-                      if (lower.includes("strategy")) return "Strategy";
+                      if (lower.includes("strategy") || lower.includes("route")) return "Smart Route";
                       return "Analysis";
                     };
 
