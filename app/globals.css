@@ -1,0 +1,152 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-outfit: 'Outfit', sans-serif;
+}
+
+@layer base {
+  :root {
+    --font-outfit: 'Outfit', sans-serif;
+  }
+}
+
+* {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+body {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior-y: none;
+}
+
+/* Soften heavy bold fonts to refined medium/semibold weight */
+.font-bold {
+  font-weight: 600 !important;
+}
+
+.font-semibold {
+  font-weight: 500 !important;
+}
+
+/* Custom Bot Avatar Live Animations */
+@keyframes botEyeBlink {
+  0%, 88%, 100% {
+    transform: scaleY(1);
+  }
+  94% {
+    transform: scaleY(0.08);
+  }
+}
+
+@keyframes botFloatPulse {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-2.5px) scale(1.02);
+  }
+}
+
+@keyframes botGlowPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(42, 71, 214, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 10px 2px rgba(42, 71, 214, 0.7);
+  }
+}
+
+.animate-bot-eye {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: botEyeBlink 3.2s infinite ease-in-out;
+}
+
+.animate-bot-body {
+  transform-origin: center;
+  animation: botFloatPulse 3s infinite ease-in-out;
+}
+
+.animate-bot-glow {
+  animation: botGlowPulse 2.5s infinite ease-in-out;
+}
+
+/* Custom Soft Drop Shadows matching Figma specs */
+.shadow-figma-sm {
+  box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.06);
+}
+
+.shadow-figma-md {
+  box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.05);
+}
+
+.shadow-figma-badge {
+  box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.08);
+}
+
+.shadow-figma-card {
+  box-shadow: 0 1px 5px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+  width: 0 !important;
+  height: 0 !important;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Infinite Marquee Loop for Crypto Ticker */
+@keyframes marqueeInfinite {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee-infinite {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: marqueeInfinite 36s linear infinite;
+}
+
+.animate-marquee-infinite:hover {
+  animation-play-state: paused;
+}
+
+/* Eliminate browser default focus outlines / white borders */
+button:focus,
+button:focus-visible {
+  outline: none !important;
+}
