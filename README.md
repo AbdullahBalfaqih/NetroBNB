@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="./public/banner-hero.png" alt="NetroBNB Hero Banner" width="100%" style="border-radius: 20px;" />
+  <img src="./public/banner-hero-v3.png" alt="NetroBNB Hero Banner" width="100%" style="border-radius: 20px;" />
 </p>
 
 <p align="center">
-  <a href="https://github.com/AbdullahBalfaqih/NetroBNB"><img src="https://img.shields.io/badge/Binance_Agent_OS-Track_A_(20K_USDC)-F4D014?style=for-the-badge&logo=binance&logoColor=black" alt="Binance Hackathon Track A" /></a>
+  <a href="https://github.com/AbdullahBalfaqih/NetroBNB"><img src="https://img.shields.io/badge/Binance-Agent_OS_Ecosystem-F4D014?style=for-the-badge&logo=binance&logoColor=black" alt="Binance Agent OS" /></a>
   <a href="https://bnbchain.org"><img src="https://img.shields.io/badge/Network-BNB_Smart_Chain-F3BA2F?style=for-the-badge&logo=binance&logoColor=black" alt="BNB Smart Chain" /></a>
-  <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/Protocol-Model_Context_Protocol_(MCP)-0A0A0A?style=for-the-badge&logo=anthropic&logoColor=white" alt="MCP Protocol" /></a>
+  <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/Protocol-Model_Context_Protocol-0A0A0A?style=for-the-badge&logo=anthropic&logoColor=white" alt="MCP Protocol" /></a>
   <a href="https://openrouter.ai"><img src="https://img.shields.io/badge/AI_Core-OpenRouter_Inference-6366F1?style=for-the-badge&logo=openai&logoColor=white" alt="OpenRouter" /></a>
 </p>
 
@@ -21,18 +21,18 @@
 
 ---
 
-## Executive Summary
+## Project Description & Overview
 
-**NetroBNB** is a production-grade Autonomous AI Asset Intelligence and Quantitative Execution Agent built specifically for the **Binance Agent OS Hackathon (Track A)**. It establishes an institutional-grade bridge between Binance Spot telemetry via the **Model Context Protocol (MCP)** and decentralized on-chain routing on the **BNB Smart Chain (BSC)**.
+**NetroBNB** is an autonomous digital asset intelligence and quantitative trading agent engineered for decentralized finance. It establishes a high-throughput bridge connecting live **Binance Spot market infrastructure** via the **Model Context Protocol (MCP)** with non-custodial decentralized execution on the **BNB Smart Chain (BSC)**.
 
-By pairing streaming Binance order flow metrics with autonomous reasoning models, NetroBNB eliminates emotional bias from digital asset research and decentralized trading execution.
+Digital asset trading often suffers from emotional bias, delayed telemetry, and fragmented execution. NetroBNB addresses these challenges by uniting streaming order book depth, multi-factor behavioral scoring, and natural language reasoning models within an ultra-responsive, Apple-grade dashboard interface.
 
-> [!IMPORTANT]
-> **Track A Verification**: NetroBNB connects directly to the official Binance Agent OS endpoint (`https://agent.binance.com/mcp/agentic`) using JSON-RPC 2.0 MCP standards. It features an automated circuit breaker and transparent high-availability failover to Binance Spot REST feeds to guarantee uninterrupted execution.
+> [!WARNING]
+> **Key Architecture Insight**: NetroBNB integrates natively with the official Binance Agent OS endpoint (`https://agent.binance.com/mcp/agentic`) using JSON-RPC 2.0 standards. To maintain zero downtime during upstream network fluctuations, the agent incorporates an automated circuit breaker with deterministic failover to Binance Spot REST endpoints.
 
 ---
 
-## Ecosystem & Technology Stack
+## Technology Stack & Ecosystem Partners
 
 | Layer | Technologies | Role in NetroBNB |
 | :--- | :--- | :--- |
@@ -109,8 +109,8 @@ NetroAI connects to Binance Spot infrastructure via Binance Agent OS MCP tools t
 - **Telemetry Observability:** Every analytical tool call records unique run IDs, execution latency, and source provenance indicators (`BINANCE_AGENT_OS_MCP` vs local fallback).
 - **Graceful Fault Tolerance:** Built-in circuit breakers ensure 100% uptime with deterministic failover to Binance REST endpoints if remote MCP relays experience upstream congestion.
 
-> [!TIP]
-> **Zero Manual Tagging**: The agent automatically ingests spot tick movements and cross-references order flow with large wallet concentrations to flag institutional accumulation phases.
+> [!WARNING]
+> **Zero Manual Tagging Tip**: The agent automatically ingests spot tick movements and cross-references order flow with large wallet concentrations to flag institutional accumulation phases.
 
 ---
 
@@ -163,8 +163,8 @@ NetroBNB's backend provides native implementations for the complete Binance Agen
 | `get_book_ticker` | `tools/call` | `{"symbol": "BNBUSDT"}` | Best bid/ask price and instantaneous spread |
 | `get_account_balance` | `tools/call` | `{}` | Sub-account balances within Agentic sandbox |
 
-> [!NOTE]
-> When `BINANCE_AGENT_OS_API_KEY` is present in your environment, calls route to `https://agent.binance.com/mcp/agentic`. When running in public mode, queries transparently route through high-throughput Binance REST endpoints without any code modification.
+> [!WARNING]
+> **Configuration Tip**: When `BINANCE_AGENT_OS_API_KEY` is present in your environment, calls route directly to `https://agent.binance.com/mcp/agentic`. When running in public mode, queries transparently route through high-throughput Binance REST endpoints without requiring manual reconfiguration.
 
 ---
 
@@ -265,4 +265,4 @@ Navigate to [http://localhost:3000](http://localhost:3000) to explore the NetroB
 
 ## License
 
-Distributed under the **MIT License**. Built for the **Binance Agent OS Mini Hackathon — Track A**.
+Distributed under the **MIT License**.
