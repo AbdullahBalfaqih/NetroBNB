@@ -474,18 +474,23 @@ VERIFIED LIVE OPEN-SOURCE MARKET TELEMETRY FOR ${targetCoin}/USDT (Data Source: 
 ABSOLUTE CRITICAL RULES:
 ${languageInstruction}
 ${directPriceRule}
-2. STRICT GROUND TRUTH ONLY (ZERO HALLUCINATION):
+2. ULTRA CONCISE & COMPACT (75% SHORTER - ABSOLUTE REQUIREMENT):
+- The user demands 75% shorter, high-signal responses. Keep your ENTIRE response under 50-70 words (or 3-4 bullet points max).
+- NEVER write long paragraphs, redundant essays, probability breakdowns, disclaimers, or closing questions.
+- Format cleanly:
+  Line 1: Asset Live Snapshot & Price
+  Line 2: 24h Change, Range, and Volume
+  Line 3: 1 short sentence summarizing technical structure / momentum.
+3. STRICT GROUND TRUTH ONLY (ZERO HALLUCINATION):
 - You MUST ONLY quote the exact numbers provided in the LIVE TELEMETRY section below.
 - Current Price: exactly $${telemetry.formattedPrice}
 - 24h Change: exactly ${telemetry.formattedChange}
 - 24h High: exactly $${telemetry.formattedHigh}
 - 24h Low: exactly $${telemetry.formattedLow}
 - 24h Volume: $${telemetry.formattedQuoteVolume}
-- NEVER invent, extrapolate, approximate, or fabricate prices or historical figures (e.g. NEVER make up unverified numbers).
-- Always attribute the data to open-source telemetry (${telemetry.source}).
-3. STRICTLY ZERO EMOJIS: Never output any emoji, icon, symbol, or smiley character under any circumstances.
-4. CONVERSATIONAL INTELLIGENCE:
-- If user greets ("hi", "مرحبا", "السلام عليكم"), greet them professionally and state that you are ready with verified live telemetry for ${targetCoin} and all major assets.
+- NEVER invent, extrapolate, approximate, or fabricate prices or historical figures.
+- Source attribution: ${telemetry.source}.
+4. STRICTLY ZERO EMOJIS: Never output any emoji, icon, symbol, or smiley character under any circumstances.
 
 LIVE TELEMETRY:
 ${liveContext}
@@ -512,7 +517,7 @@ ${liveContext}
                 { role: "user", content: userMessage },
               ],
               temperature: 0.1,
-              max_tokens: 700,
+              max_tokens: 220,
             }),
           });
           clearTimeout(timeoutId);
@@ -561,7 +566,7 @@ ${liveContext}
       if (isGreeting) {
         return NextResponse.json({
           message_id: `msg-${Date.now()}`,
-          answer: `مرحباً بك! أنا NetroAI، مستشارك الذكي للبيانات والتحليلات الفورية لأسواق العملات الرقمية عبر شبكة DefiLlama مفتوحة المصدر وسلسلة BNB Smart Chain.\n\nأنا متصل حالياً بالبث الحي لبيانات زوج ${targetCoin}/USDT.\n\nكيف يمكنني مساعدتك في تحليلك الفني أو رصد الأسعار اليوم؟`,
+          answer: `مرحباً بك! أنا NetroAI، جاهز لرصد الأسعار اللحظية والتحليل الفوري لعملة ${targetCoin} وكافة الأصول الرقمية. كيف يمكنني مساعدتك؟`,
           active_asset: targetCoin,
           suggested_actions: [
             `تحليل اتجاه ${targetCoin} خلال 24 ساعة`,
@@ -572,15 +577,10 @@ ${liveContext}
       }
 
       const compCoin = targetCoin === "BNB" ? "BTC" : "BNB";
-      const directAnswer = `السعر الفوري الحالي لعملة ${targetCoin} هو $${telemetry.formattedPrice} دولار أمريكي (المصدر: ${telemetry.source}).
-
-بيانات السوق المباشرة:
-- نسبة التغير خلال 24 ساعة: ${telemetry.formattedChange} (${telemetry.isPositive ? "زخم صعودي وتماسك إيجابي" : "مرحلة تصحيح وجني أرباح"})
-- نطاق السعر (24 ساعة): الأعلى $${telemetry.formattedHigh} | الأدنى $${telemetry.formattedLow}
-- حجم التداول اليومي: $${telemetry.formattedQuoteVolume} دولار
-
-تحليل حركة الأوامر والسيولة:
-تظهر قراءات السيولة وعمق السوق امتصاصاً مستمراً لطلبات الشراء عند مناطق الدعم القريبة، مع تماسك الأسعار عبر نافذة الـ 24 ساعة الحالية.`;
+      const directAnswer = `ملخص ${targetCoin}/USDT اللحظي (${telemetry.source}):
+• السعر الفوري: $${telemetry.formattedPrice} (${telemetry.formattedChange} خلال 24س)
+• النطاق اليومي: $${telemetry.formattedLow} – $${telemetry.formattedHigh} | حجم التداول: $${telemetry.formattedQuoteVolume}
+• القراءة الفنية: ${telemetry.isPositive ? "تماسك إيجابي وزخم صعودي مستقر أعلى مستويات الدعم." : "تصحيح طفيف ضمن نطاق تداول صحي مع امتصاص للسيولة فوق الدعم الأساسي."}`;
 
       return NextResponse.json({
         message_id: `msg-${Date.now()}`,
@@ -599,7 +599,7 @@ ${liveContext}
     if (isGreeting) {
       return NextResponse.json({
         message_id: `msg-${Date.now()}`,
-        answer: `Hello! I am NetroAI, your autonomous intelligence agent connected to real-time open-source crypto telemetry via DefiLlama and BNB Smart Chain infrastructure.\n\nI am actively tracking live orderbook telemetry, taker flow, and whale liquidity for ${targetCoin}.\n\nHow can I assist your market analysis today?`,
+        answer: `Hello! I am NetroAI, ready with real-time open-source telemetry for ${targetCoin} and all crypto assets. How can I assist you today?`,
         active_asset: targetCoin,
         suggested_actions: [
           `Analyze ${targetCoin} 24h Trend`,
@@ -609,15 +609,10 @@ ${liveContext}
       });
     }
 
-    const smartEnglishAnswer = `The current spot price for ${targetCoin} is $${telemetry.formattedPrice} USD (Source: ${telemetry.source}).
-
-Market Telemetry Overview:
-- 24h Price Change: ${telemetry.formattedChange} (${telemetry.isPositive ? "Bullish Consolidation" : "Mild Retracement"})
-- 24h Range: High $${telemetry.formattedHigh} | Low $${telemetry.formattedLow}
-- 24h Spot Volume: $${telemetry.formattedQuoteVolume} USD
-
-Orderflow & Market Microstructure:
-Liquidity depth reflects consistent taker bid absorption near the current support range. Whale wallet concentrations indicate steady holding patterns over the rolling 24-hour window.`;
+    const smartEnglishAnswer = `${targetCoin}/USDT Live Snapshot (${telemetry.source}):
+• Spot Price: $${telemetry.formattedPrice} (${telemetry.formattedChange} 24h)
+• 24h Range: $${telemetry.formattedLow} – $${telemetry.formattedHigh} | Volume: $${telemetry.formattedQuoteVolume}
+• Market Read: ${telemetry.isPositive ? "Bullish consolidation holding firmly above key support with steady liquidity absorption." : "Mild retracement within normal consolidation bounds; strong taker bid support remains intact."}`;
 
     return NextResponse.json({
       message_id: `msg-${Date.now()}`,
