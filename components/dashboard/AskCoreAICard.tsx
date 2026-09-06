@@ -233,9 +233,9 @@ export const AskCoreAICard: React.FC = () => {
 
       if (isArabic) {
         if (isGreeting) {
-          fallbackText = `مرحباً بك! أنا NetroAI، مستشارك الذكي للبيانات الفورية لأسواق العملات الرقمية عبر شبكة بينانس سبوت وسلسلة BNB Smart Chain. كيف يمكنني مساعدتك اليوم؟`;
+          fallbackText = `مرحباً بك! أنا NetroAI، جاهز لرصد الأسعار اللحظية والتحليل الفوري لعملة ${coinSym} وكافة الأصول عبر بيانات DefiLlama مفتوحة المصدر.`;
         } else {
-          fallbackText = `بيانات السوق الفورية لـ ${coinName} (${coinSym}):\n\nالسعر الحالي: ${coinPrice} (التغير: ${coinChg})\nحركة الأوامر والسيولة: استقرار عند مستويات الدعم الحالية مع تماسك مستمر في التدفقات النقدية عبر شبكة بينانس.`;
+          fallbackText = `**ملخص ${coinSym}/USDT اللحظي** (المصدر: DefiLlama مفتوح المصدر)\n• السعر الفوري: ${coinPrice} (${coinChg} خلال 24س)\n• القراءة الفنية: استقرار وتماسك صحي أعلى مستويات الدعم.`;
         }
         suggestedActions = [
           `تحليل اتجاه ${coinSym} خلال 24 ساعة`,
@@ -244,9 +244,9 @@ export const AskCoreAICard: React.FC = () => {
         ];
       } else {
         if (isGreeting) {
-          fallbackText = `Hello! I am NetroAI, your intelligent autonomous agent for real-time crypto telemetry on Binance Spot and BNB Smart Chain. How can I assist your market analysis today?`;
+          fallbackText = `Hello! I am NetroAI, ready with real-time open-source telemetry for ${coinSym} and all crypto assets. How can I assist you?`;
         } else {
-          fallbackText = `Live Market Telemetry for ${coinName} (${coinSym}) via Binance Spot:\n\nCurrent Price: ${coinPrice} (24h Change: ${coinChg})\nOrderflow & Momentum: Stable consolidation channel with sustained taker volume absorption. Depth and liquidity indicators support instant non-custodial execution on BNB Smart Chain.`;
+          fallbackText = `**${coinSym}/USDT Live Snapshot** (Source: DefiLlama Open Source)\n• Spot Price: ${coinPrice} (${coinChg} 24h)\n• Technical Read: Healthy consolidation holding firmly above key support levels.`;
         }
         suggestedActions = [
           `Analyze ${coinSym} 24h Trend`,

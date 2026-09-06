@@ -455,42 +455,98 @@ VERIFIED LIVE OPEN-SOURCE MARKET TELEMETRY FOR ${targetCoin}/USDT (Data Source: 
 - Exact 24h Spot Turnover/Volume: $${telemetry.formattedQuoteVolume} USD
 `;
 
-    // 3. OpenRouter integration
+    const compCoin = targetCoin === "BNB" ? "BTC" : "BNB";
+
+    const compactArabicAnswer = isPriceOnlyQuery
+      ? `السعر الحالي لعملة ${targetCoin} هو $${telemetry.formattedPrice} دولار (${telemetry.formattedChange} خلال 24س).\nالنطاق اليومي: $${telemetry.formattedLow} – $${telemetry.formattedHigh} | الحجم: $${telemetry.formattedQuoteVolume} (المصدر: ${telemetry.source})`
+      : `**ملخص ${targetCoin}/USDT اللحظي** (${telemetry.source})
+• السعر الفوري: $${telemetry.formattedPrice} (${telemetry.formattedChange} خلال 24س)
+• النطاق اليومي: $${telemetry.formattedLow} – $${telemetry.formattedHigh} | الحجم: $${telemetry.formattedQuoteVolume}
+• القراءة الفنية: ${telemetry.isPositive ? "تماسك إيجابي وزخم صعودي مستقر أعلى مستويات الدعم." : "تصحيح طفيف ومدروس ضمن نطاق صحي مع ثبات السعر فوق الدعم الرئيسي."}`;
+
+    const compactEnglishAnswer = isPriceOnlyQuery
+      ? `The current spot price for ${targetCoin} is $${telemetry.formattedPrice} USD (${telemetry.formattedChange} 24h).\n24h Range: $${telemetry.formattedLow} – $${telemetry.formattedHigh} | Volume: $${telemetry.formattedQuoteVolume} (Source: ${telemetry.source})`
+      : `**${targetCoin}/USDT Live Snapshot** (${telemetry.source})
+• Spot Price: $${telemetry.formattedPrice} (${telemetry.formattedChange} 24h)
+• 24h Range: $${telemetry.formattedLow} – $${telemetry.formattedHigh} | Volume: $${telemetry.formattedQuoteVolume}
+• Technical Read: ${telemetry.isPositive ? "Bullish consolidation holding firmly above key support with steady liquidity absorption." : "Mild consolidation within a healthy range; solid bid liquidity supporting the floor."}`;
+
+    const guaranteedAnswer = isArabic ? compactArabicAnswer : compactEnglishAnswer;
+
+    const suggestedActions = isArabic
+      ? [
+          `تحليل اتجاه ${targetCoin} خلال 24 ساعة`,
+          `ما هي أسباب تحرك ${targetCoin} اليوم؟`,
+          `فحص عمق دفتر الأوامر لـ ${targetCoin}`,
+          `مقارنة ${targetCoin} مع ${compCoin === "BTC" ? "البيتكوين" : "BNB"}`,
+        ]
+      : [
+          `Analyze ${targetCoin} 24h Trend`,
+          `Why is ${targetCoin} moving?`,
+          `Inspect ${targetCoin} Orderbook Depth`,
+          `Compare ${targetCoin} vs ${compCoin}`,
+        ];
+
+    // Handle Greetings instantly
+    const isGreeting = /^(hi|hello|hey|greetings|yo|welcome|مرحبا|أهلا|اهلا|السلام عليكم|صباح الخير|مساء الخير)/i.test(
+      userMessage.trim()
+    );
+
+    if (isGreeting) {
+      return NextResponse.json({
+        message_id: `msg-${Date.now()}`,
+        answer: isArabic
+          ? `مرحباً بك! أنا NetroAI، جاهز لرصد الأسعار اللحظية والتحليل الفوري لعملة ${targetCoin} وكافة الأصول الرقمية. كيف يمكنني مساعدتك؟`
+          : `Hello! I am NetroAI, ready with real-time open-source telemetry for ${targetCoin} and all crypto assets. How can I assist you today?`,
+        active_asset: targetCoin,
+        suggested_actions: suggestedActions,
+      });
+    }
+
+    // Direct Instant Handling for Analysis & Price queries:
+    // Guarantees sub-50ms speed, 100% accurate DefiLlama telemetry, ZERO placeholders [LIVE], and strictly <30 words.
+    const isPriceComplaintOrInquiry =
+      /(اين\s*الاسعار|أين\s*الأسعار|وين\s*الاسعار|وين\s*السعر|ظهر\s*لايف|لايف\s*فقط|ما\s*ظهر\s*السعر|اختصر|طويل|طويله|طويييله)/i.test(
+        userMessage
+      );
+
+    const isAnalysisOrPriceQuery =
+      isPriceComplaintOrInquiry ||
+      isPriceOnlyQuery ||
+      /^(analyze|analysis|price|quote|snapshot|overview|review|stats|metrics|status|chart|how much|what is the price|كم\s*سعر|حلل|تحليل|اسعار|أسعار|سعر|وضع|نظرة|تقرير|وين\s*السعر|اين\s*الاسعار|أين\s*الأسعار)/i.test(
+        userMessage.trim()
+      ) ||
+      /^analyze\b/i.test(userMessage.trim()) ||
+      /^حلل\b/i.test(userMessage.trim()) ||
+      /^كم\b/i.test(userMessage.trim());
+
+    if (isAnalysisOrPriceQuery) {
+      return NextResponse.json({
+        message_id: `msg-${Date.now()}`,
+        answer: guaranteedAnswer,
+        active_asset: targetCoin,
+        suggested_actions: suggestedActions,
+      });
+    }
+
+    // 3. OpenRouter integration for open-ended queries
     const openRouterKey = process.env.OPENROUTER_API_KEY;
 
     if (openRouterKey) {
       const languageInstruction = isArabic
-        ? `1. LANGUAGE REQUIREMENT: The user wrote in Arabic. You MUST respond in fluent, professional, authoritative Arabic (اللغة العربية الفصحى). Never use English except for the asset ticker symbol (e.g. ${targetCoin}/USDT).`
-        : `1. LANGUAGE REQUIREMENT: The user wrote in English. You MUST respond strictly and exclusively in English.`;
+        ? `1. LANGUAGE REQUIREMENT: The user wrote in Arabic. You MUST respond strictly in Arabic (اللغة العربية الفصحى).`
+        : `1. LANGUAGE REQUIREMENT: The user wrote in English. You MUST respond strictly in English.`;
 
-      const directPriceRule = isPriceOnlyQuery
-        ? isArabic
-          ? `DIRECT ANSWER RULE: The user is asking directly for the price ("كم سعرها"). Your VERY FIRST sentence MUST state the exact price: "السعر الحالي لعملة ${targetCoin} هو $${telemetry.formattedPrice} دولار أمريكي (وفقاً لبيانات ${telemetry.source} مفتوحة المصدر)."`
-          : `DIRECT ANSWER RULE: The user is asking directly for the price. Your VERY FIRST sentence MUST state the exact price: "The current price of ${targetCoin} is $${telemetry.formattedPrice} USD (sourced from ${telemetry.source})."`
-        : "";
-
-      const systemPrompt = `You are NetroAI, an advanced autonomous Crypto & Market Intelligence Agent embedded inside the NetroBNB institutional dashboard.
+      const systemPrompt = `You are NetroAI, an advanced autonomous Crypto & Market Intelligence Agent embedded inside the NetroBNB dashboard.
 
 ABSOLUTE CRITICAL RULES:
 ${languageInstruction}
-${directPriceRule}
 2. ULTRA CONCISE & COMPACT (75% SHORTER - ABSOLUTE REQUIREMENT):
-- The user demands 75% shorter, high-signal responses. Keep your ENTIRE response under 50-70 words (or 3-4 bullet points max).
-- NEVER write long paragraphs, redundant essays, probability breakdowns, disclaimers, or closing questions.
-- Format cleanly:
-  Line 1: Asset Live Snapshot & Price
-  Line 2: 24h Change, Range, and Volume
-  Line 3: 1 short sentence summarizing technical structure / momentum.
-3. STRICT GROUND TRUTH ONLY (ZERO HALLUCINATION):
-- You MUST ONLY quote the exact numbers provided in the LIVE TELEMETRY section below.
-- Current Price: exactly $${telemetry.formattedPrice}
-- 24h Change: exactly ${telemetry.formattedChange}
-- 24h High: exactly $${telemetry.formattedHigh}
-- 24h Low: exactly $${telemetry.formattedLow}
-- 24h Volume: $${telemetry.formattedQuoteVolume}
-- NEVER invent, extrapolate, approximate, or fabricate prices or historical figures.
-- Source attribution: ${telemetry.source}.
-4. STRICTLY ZERO EMOJIS: Never output any emoji, icon, symbol, or smiley character under any circumstances.
+- Keep your ENTIRE response under 35 words total.
+- NEVER write long paragraphs, redundant essays, questionnaires, options (A/B/C/D), disclaimers, or closing questions.
+- Write direct, high-signal facts only.
+- Real Market Telemetry: Price: $${telemetry.formattedPrice} (${telemetry.formattedChange}), 24h Range: $${telemetry.formattedLow} - $${telemetry.formattedHigh}, Volume: $${telemetry.formattedQuoteVolume}.
+- Strictly ZERO EMOJIS.
 
 LIVE TELEMETRY:
 ${liveContext}
@@ -499,7 +555,7 @@ ${liveContext}
       for (const modelCandidate of FREE_MODELS_POOL) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 8000);
+          const timeoutId = setTimeout(() => controller.abort(), 6000);
 
           const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
@@ -517,7 +573,7 @@ ${liveContext}
                 { role: "user", content: userMessage },
               ],
               temperature: 0.1,
-              max_tokens: 220,
+              max_tokens: 120,
             }),
           });
           clearTimeout(timeoutId);
@@ -526,22 +582,16 @@ ${liveContext}
             const data = await response.json();
             const rawContent = data.choices?.[0]?.message?.content || "";
             if (rawContent.trim()) {
-              const cleanReply = stripEmojis(rawContent);
+              let cleanReply = stripEmojis(rawContent);
 
-              const compCoin = targetCoin === "BNB" ? "BTC" : "BNB";
-              const suggestedActions = isArabic
-                ? [
-                    `تحليل اتجاه ${targetCoin} خلال 24 ساعة`,
-                    `ما هي أسباب تحرك ${targetCoin} اليوم؟`,
-                    `فحص عمق دفتر الأوامر لـ ${targetCoin}`,
-                    `مقارنة ${targetCoin} مع ${compCoin === "BTC" ? "البيتكوين" : "BNB"}`,
-                  ]
-                : [
-                    `Analyze ${targetCoin} 24h Trend`,
-                    `Why is ${targetCoin} moving?`,
-                    `Inspect ${targetCoin} Orderbook Depth`,
-                    `Compare ${targetCoin} vs ${compCoin}`,
-                  ];
+              // Bulletproof Anti-Placeholder & Anti-Bloat Sanitizer
+              const hasBadPlaceholder = /\[[A-Za-z0-9_%-]+\]/i.test(cleanReply);
+              const isRamblingQuiz = /(Which one|confirm which|dataset you want|\b[A-D]\)\s|What I Can Provide)/i.test(cleanReply);
+              const isTooLong = cleanReply.length > 250;
+
+              if (hasBadPlaceholder || isRamblingQuiz || isTooLong) {
+                cleanReply = guaranteedAnswer;
+              }
 
               return NextResponse.json({
                 message_id: `msg-${Date.now()}`,
@@ -557,73 +607,12 @@ ${liveContext}
       }
     }
 
-    // 4. Guaranteed deterministic fallback (Arabic & English) using verified open-source telemetry
-    const isGreeting = /^(hi|hello|hey|greetings|yo|welcome|مرحبا|أهلا|اهلا|السلام عليكم|صباح الخير|مساء الخير)/i.test(
-      userMessage.trim()
-    );
-
-    if (isArabic) {
-      if (isGreeting) {
-        return NextResponse.json({
-          message_id: `msg-${Date.now()}`,
-          answer: `مرحباً بك! أنا NetroAI، جاهز لرصد الأسعار اللحظية والتحليل الفوري لعملة ${targetCoin} وكافة الأصول الرقمية. كيف يمكنني مساعدتك؟`,
-          active_asset: targetCoin,
-          suggested_actions: [
-            `تحليل اتجاه ${targetCoin} خلال 24 ساعة`,
-            `ما هي أسباب تحرك ${targetCoin} اليوم؟`,
-            `فحص عمق دفتر الأوامر لـ ${targetCoin}`,
-          ],
-        });
-      }
-
-      const compCoin = targetCoin === "BNB" ? "BTC" : "BNB";
-      const directAnswer = `ملخص ${targetCoin}/USDT اللحظي (${telemetry.source}):
-• السعر الفوري: $${telemetry.formattedPrice} (${telemetry.formattedChange} خلال 24س)
-• النطاق اليومي: $${telemetry.formattedLow} – $${telemetry.formattedHigh} | حجم التداول: $${telemetry.formattedQuoteVolume}
-• القراءة الفنية: ${telemetry.isPositive ? "تماسك إيجابي وزخم صعودي مستقر أعلى مستويات الدعم." : "تصحيح طفيف ضمن نطاق تداول صحي مع امتصاص للسيولة فوق الدعم الأساسي."}`;
-
-      return NextResponse.json({
-        message_id: `msg-${Date.now()}`,
-        answer: directAnswer,
-        active_asset: targetCoin,
-        suggested_actions: [
-          `تحليل اتجاه ${targetCoin} خلال 24 ساعة`,
-          `ما هي أسباب تحرك ${targetCoin} اليوم؟`,
-          `فحص عمق دفتر الأوامر لـ ${targetCoin}`,
-          `مقارنة ${targetCoin} مع ${compCoin === "BTC" ? "البيتكوين" : "BNB"}`,
-        ],
-      });
-    }
-
-    // English Fallback
-    if (isGreeting) {
-      return NextResponse.json({
-        message_id: `msg-${Date.now()}`,
-        answer: `Hello! I am NetroAI, ready with real-time open-source telemetry for ${targetCoin} and all crypto assets. How can I assist you today?`,
-        active_asset: targetCoin,
-        suggested_actions: [
-          `Analyze ${targetCoin} 24h Trend`,
-          `Why is ${targetCoin} moving?`,
-          `Inspect ${targetCoin} Orderbook Depth`,
-        ],
-      });
-    }
-
-    const smartEnglishAnswer = `${targetCoin}/USDT Live Snapshot (${telemetry.source}):
-• Spot Price: $${telemetry.formattedPrice} (${telemetry.formattedChange} 24h)
-• 24h Range: $${telemetry.formattedLow} – $${telemetry.formattedHigh} | Volume: $${telemetry.formattedQuoteVolume}
-• Market Read: ${telemetry.isPositive ? "Bullish consolidation holding firmly above key support with steady liquidity absorption." : "Mild retracement within normal consolidation bounds; strong taker bid support remains intact."}`;
-
+    // 4. Guaranteed deterministic fallback
     return NextResponse.json({
       message_id: `msg-${Date.now()}`,
-      answer: smartEnglishAnswer,
+      answer: guaranteedAnswer,
       active_asset: targetCoin,
-      suggested_actions: [
-        `Analyze ${targetCoin} 24h Trend`,
-        `Why is ${targetCoin} moving?`,
-        `Inspect ${targetCoin} Orderbook Depth`,
-        `Compare ${targetCoin} vs ${targetCoin === "BNB" ? "BTC" : "BNB"}`,
-      ],
+      suggested_actions: suggestedActions,
     });
   } catch (err: any) {
     console.error("Chat API Error details:", err);
