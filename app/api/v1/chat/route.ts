@@ -17,7 +17,7 @@ function stripEmojis(text: string): string {
     .trim();
 }
 
-// Arabic and English aliases for precise asset detection
+// Comprehensive Arabic and English aliases map covering all catalog assets and major market tokens
 const ASSET_ALIASES: Record<string, string> = {
   // Bitcoin
   BITCOIN: "BTC", BTC: "BTC", "بيتكوين": "BTC", "بتكوين": "BTC", "البيتكوين": "BTC",
@@ -53,9 +53,37 @@ const ASSET_ALIASES: Record<string, string> = {
   PEPE: "PEPE", "بيبي": "PEPE",
   // Shiba
   SHIBA: "SHIB", SHIB: "SHIB", "شيبا": "SHIB",
+  // Polkadot
+  POLKADOT: "DOT", DOT: "DOT", "بولكادوت": "DOT", "بولكا دوت": "DOT", "دوت": "DOT",
+  // Aptos
+  APTOS: "APT", APT: "APT", "ابتوس": "APT", "أبتوس": "APT",
+  // Bittensor
+  BITTENSOR: "TAO", TAO: "TAO", "تاو": "TAO", "بيتنسور": "TAO",
+  // Uniswap
+  UNISWAP: "UNI", UNI: "UNI", "يوني": "UNI", "يونيسواب": "UNI", "يوني سواب": "UNI",
+  // Arbitrum
+  ARBITRUM: "ARB", ARB: "ARB", "اربيتروم": "ARB", "أربيتروم": "ARB",
+  // Optimism
+  OPTIMISM: "OP", OP: "OP", "اوبتيميزم": "OP", "أوبتيمزم": "OP",
+  // Render
+  RENDER: "RENDER", RNDR: "RENDER", "رندر": "RENDER",
+  // Kaspa
+  KASPA: "KAS", KAS: "KAS", "كاسبا": "KAS",
+  // Injective
+  INJECTIVE: "INJ", INJ: "INJ", "انجكتيف": "INJ", "إنجكتف": "INJ",
+  // Cosmos
+  COSMOS: "ATOM", ATOM: "ATOM", "كوزموس": "ATOM", "اتوم": "ATOM",
+  // Stellar
+  STELLAR: "XLM", XLM: "XLM", "ستيلار": "XLM",
+  // Celestia
+  CELESTIA: "TIA", TIA: "TIA", "سيليستيا": "TIA",
+  // Meme Coins
+  FLOKI: "FLOKI", "فلوكي": "FLOKI",
+  BONK: "BONK", "بونك": "BONK",
+  WIF: "WIF", "دوج ويف هات": "WIF",
 };
 
-// Open-Source DefiLlama & CoinGecko ID mapping
+// Open-Source DefiLlama & CoinGecko ID mapping for all catalog coins and extended top assets
 const ASSET_TO_OPEN_ID: Record<string, string> = {
   BTC: "bitcoin",
   ETH: "ethereum",
@@ -74,29 +102,52 @@ const ASSET_TO_OPEN_ID: Record<string, string> = {
   LTC: "litecoin",
   NEAR: "near",
   POL: "polygon-ecosystem-token",
+  MATIC: "polygon-ecosystem-token",
+  DOT: "polkadot",
+  APT: "aptos",
+  TAO: "bittensor",
+  UNI: "uniswap",
+  ARB: "arbitrum",
+  OP: "optimism",
+  RENDER: "render-token",
+  RNDR: "render-token",
+  KAS: "kaspa",
+  FET: "fetch-ai",
+  INJ: "injective-protocol",
+  ATOM: "cosmos",
+  XLM: "stellar",
+  TIA: "celestia",
+  BONK: "bonk",
+  FLOKI: "floki",
+  WIF: "dogwifcoin",
 };
 
-// Accurate baseline values
+// Accurate baseline values for all 21 catalog assets
 const COIN_BASELINES: Record<
   string,
   { name: string; nameAr: string; price: number; high: number; low: number; chg: number; vol: number }
 > = {
-  BTC: { name: "Bitcoin", nameAr: "البيتكوين", price: 80180.0, high: 81200.0, low: 79200.0, chg: 0.5, vol: 24500000000 },
-  ETH: { name: "Ethereum", nameAr: "الإيثريوم", price: 2512.0, high: 2560.0, low: 2470.0, chg: -0.3, vol: 12500000000 },
+  BTC: { name: "Bitcoin", nameAr: "البيتكوين", price: 80173.0, high: 81200.0, low: 79200.0, chg: 0.5, vol: 24500000000 },
+  ETH: { name: "Ethereum", nameAr: "الإيثريوم", price: 2513.0, high: 2560.0, low: 2470.0, chg: -0.3, vol: 12500000000 },
   BNB: { name: "BNB", nameAr: "بي ان بي", price: 752.8, high: 769.0, low: 740.0, chg: -1.55, vol: 1210000000 },
   SOL: { name: "Solana", nameAr: "سولانا", price: 106.4, high: 109.0, low: 103.0, chg: 3.1, vol: 2100000000 },
   XRP: { name: "XRP", nameAr: "ريبل", price: 1.42, high: 1.48, low: 1.38, chg: -0.8, vol: 1800000000 },
   DOGE: { name: "Dogecoin", nameAr: "دوجكوين", price: 0.09, high: 0.095, low: 0.088, chg: 1.1, vol: 850000000 },
   ADA: { name: "Cardano", nameAr: "كاردانو", price: 0.22, high: 0.24, low: 0.21, chg: -0.4, vol: 420000000 },
-  AVAX: { name: "Avalanche", nameAr: "أفالانش", price: 7.83, high: 8.2, low: 7.6, chg: 0.5, vol: 310000000 },
-  LINK: { name: "Chainlink", nameAr: "تشين لينك", price: 13.18, high: 13.8, low: 12.9, chg: 0.9, vol: 280000000 },
+  AVAX: { name: "Avalanche", nameAr: "أفالانش", price: 7.82, high: 8.2, low: 7.6, chg: 0.5, vol: 310000000 },
+  LINK: { name: "Chainlink", nameAr: "تشين لينك", price: 13.2, high: 13.8, low: 12.9, chg: 0.9, vol: 280000000 },
   TON: { name: "Toncoin", nameAr: "تون كوين", price: 1.43, high: 1.5, low: 1.38, chg: -0.2, vol: 190000000 },
   SUI: { name: "Sui", nameAr: "سوي", price: 0.81, high: 0.86, low: 0.78, chg: 2.1, vol: 450000000 },
   PEPE: { name: "Pepe", nameAr: "بيبي", price: 0.0000036, high: 0.0000039, low: 0.0000034, chg: 3.5, vol: 560000000 },
   SHIB: { name: "Shiba Inu", nameAr: "شيبا إينو", price: 0.0000055, high: 0.0000058, low: 0.0000052, chg: -0.6, vol: 320000000 },
   TRX: { name: "Tron", nameAr: "ترون", price: 0.33, high: 0.35, low: 0.32, chg: 0.3, vol: 410000000 },
   LTC: { name: "Litecoin", nameAr: "لايتكوين", price: 54.8, high: 57.0, low: 53.5, chg: 0.15, vol: 290000000 },
-  NEAR: { name: "Near Protocol", nameAr: "نير بروتوكول", price: 2.45, high: 2.6, low: 2.35, chg: 1.4, vol: 210000000 },
+  NEAR: { name: "Near Protocol", nameAr: "نير بروتوكول", price: 2.44, high: 2.6, low: 2.35, chg: 1.4, vol: 210000000 },
+  DOT: { name: "Polkadot", nameAr: "بولكادوت", price: 0.97, high: 1.05, low: 0.92, chg: -1.2, vol: 180000000 },
+  APT: { name: "Aptos", nameAr: "أبتوس", price: 0.62, high: 0.68, low: 0.58, chg: 1.8, vol: 140000000 },
+  TAO: { name: "Bittensor", nameAr: "بيتنسور", price: 265.0, high: 278.0, low: 254.0, chg: -0.5, vol: 95000000 },
+  UNI: { name: "Uniswap", nameAr: "يونيسواب", price: 7.2, high: 7.6, low: 6.9, chg: 0.8, vol: 160000000 },
+  POL: { name: "Polygon", nameAr: "بوليجون", price: 0.098, high: 0.105, low: 0.092, chg: -0.9, vol: 110000000 },
 };
 
 interface LiveMarketTelemetry {
@@ -130,10 +181,16 @@ function detectTargetCoin(userMessage: string, activeAsset: string): string {
 
   // 2. Exact word regex match
   const symbolMatch = trimmed.match(
-    /\b(BTC|ETH|BNB|SOL|XRP|DOGE|ADA|AVAX|LINK|NEAR|SUI|PEPE|SHIB|TRX|LTC|TON|POL)\b/i
+    /\b(BTC|ETH|BNB|SOL|XRP|DOGE|ADA|AVAX|LINK|NEAR|SUI|PEPE|SHIB|TRX|LTC|TON|POL|DOT|APT|TAO|UNI|ARB|OP|RENDER|RNDR|KAS|INJ|ATOM|XLM|TIA|BONK|FLOKI|WIF)\b/i
   );
   if (symbolMatch) {
     return symbolMatch[1].toUpperCase();
+  }
+
+  // 3. Fallback to any uppercase ticker if explicitly written
+  const tickerMatch = trimmed.match(/\b([A-Z]{2,8})\b/);
+  if (tickerMatch && tickerMatch[1] !== "USD" && tickerMatch[1] !== "USDT") {
+    return tickerMatch[1];
   }
 
   return activeAsset.toUpperCase();
@@ -151,11 +208,27 @@ async function fetchWithTimeout(url: string, timeoutMs: number = 2200): Promise<
   }
 }
 
-// Resilient Telemetry Fetcher prioritizing 100% Open-Source global feeds (DefiLlama + CoinGecko)
-// followed by Binance & Bybit spot exchange APIs.
+// Universal Telemetry Fetcher: DefiLlama (100% Open Source) -> CoinGecko -> Binance Spot -> Bybit Spot -> Baseline
 async function fetchLiveMarketTelemetry(symbol: string): Promise<LiveMarketTelemetry> {
   const coinKey = symbol.toUpperCase();
-  const openId = ASSET_TO_OPEN_ID[coinKey] || "binancecoin";
+  let openId = ASSET_TO_OPEN_ID[coinKey];
+
+  // Dynamic search for any token on Earth not yet in static dictionary
+  if (!openId) {
+    try {
+      const searchRes = await fetchWithTimeout(
+        `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(coinKey)}`,
+        1800
+      );
+      if (searchRes && searchRes.ok) {
+        const sData = await searchRes.json();
+        const found =
+          sData?.coins?.find((c: any) => c.symbol.toUpperCase() === coinKey) || sData?.coins?.[0];
+        if (found?.id) openId = found.id;
+      }
+    } catch {}
+  }
+  openId = openId || "binancecoin";
   const pair = `${coinKey}USDT`;
 
   // 1. Tier 1: DefiLlama (100% Open-Source decentralized aggregator, zero geoblocking) + CoinGecko Open Feed
@@ -231,7 +304,7 @@ async function fetchLiveMarketTelemetry(symbol: string): Promise<LiveMarketTelem
 
   // 2. Tier 2: Binance Spot (if not geoblocked)
   try {
-    const res = await fetchWithTimeout(`https://api.binance.com/api/v3/ticker/24hr?symbol=${pair}`, 2000);
+    const res = await fetchWithTimeout(`https://api.binance.com/api/v3/ticker/24hr?symbol=${pair}`, 1800);
     if (res && res.ok) {
       const data = await res.json();
       const lastPrice = parseFloat(data.lastPrice);
@@ -276,7 +349,7 @@ async function fetchLiveMarketTelemetry(symbol: string): Promise<LiveMarketTelem
 
   // 3. Tier 3: Bybit Spot
   try {
-    const res = await fetchWithTimeout(`https://api.bybit.com/v5/market/tickers?category=spot&symbol=${pair}`, 2000);
+    const res = await fetchWithTimeout(`https://api.bybit.com/v5/market/tickers?category=spot&symbol=${pair}`, 1800);
     if (res && res.ok) {
       const json = await res.json();
       const item = json?.result?.list?.[0];
