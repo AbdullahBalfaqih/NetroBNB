@@ -242,8 +242,6 @@ Orderflow & Momentum: Stable consolidation channel with sustained taker volume a
         sender: "assistant",
         text: fallbackText,
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        behavioral_score: 84,
-        confidence: 0.92,
         suggested_actions: [
           `تحليل عمق دفتر طلبات ${coinSym}`,
           `مقارنة حركة ${coinSym} مع BNB`,
@@ -485,26 +483,6 @@ Orderflow & Momentum: Stable consolidation channel with sustained taker volume a
                         : "bg-white text-[#1C1C1C] rounded-2xl rounded-tl-xs max-w-[92%] shadow-sm border border-black/5"
                     }`}
                   >
-                    {/* Behavioral Score Badge */}
-                    {msg.sender === "assistant" && msg.behavioral_score !== undefined && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.85 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.08, type: "spring", stiffness: 450 }}
-                        className="flex items-center gap-2 mb-2 pb-1.5 border-b border-gray-100 flex-wrap"
-                      >
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#1C1C1C] text-[#F4D014] text-[10.5px] font-bold tracking-wide">
-                          <Sparkles size={10} />
-                          Score: {msg.behavioral_score}/100
-                        </span>
-                        {msg.confidence !== undefined && (
-                          <span className="text-[10px] text-gray-500 font-semibold">
-                            Confidence: {Math.round(msg.confidence * 100)}%
-                          </span>
-                        )}
-                      </motion.div>
-                    )}
-
                     {renderFormattedText(msg.text)}
 
                     {/* Proposed Action Preview Widget */}
@@ -786,26 +764,6 @@ Orderflow & Momentum: Stable consolidation channel with sustained taker volume a
                           : "bg-white text-[#1C1C1C] rounded-tl-xs shadow-sm"
                       }`}
                     >
-                      {/* Behavioral Score Badge */}
-                      {msg.sender === "assistant" && msg.behavioral_score !== undefined && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.85 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: 0.08, type: "spring" }}
-                          className="flex items-center gap-2 mb-2 pb-1.5 border-b border-gray-100 flex-wrap"
-                        >
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-[#1C1C1C] text-[#F4D014] text-[11px] font-bold tracking-wide">
-                            <Sparkles size={11} />
-                            Behavioral Score: {msg.behavioral_score}/100
-                          </span>
-                          {msg.confidence !== undefined && (
-                            <span className="text-[11px] text-gray-500 font-semibold">
-                              Confidence: {Math.round(msg.confidence * 100)}%
-                            </span>
-                          )}
-                        </motion.div>
-                      )}
-
                       {renderFormattedText(msg.text)}
 
                       {/* Modal Action Preview */}

@@ -80,19 +80,11 @@ export const CalendarCard: React.FC = () => {
     let isMounted = true;
     const fetchLivePrices = async () => {
       try {
-        const [resBnb, resBtc] = await Promise.all([
-          fetch("https://api.binance.com/api/v3/ticker/price?symbol=BNBUSDT"),
-          fetch("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"),
-        ]);
-        if (resBnb.ok && isMounted) {
-          const data = await resBnb.json();
-          const p = parseFloat(data.price);
-          if (p > 0) setBnbPrice(p);
-        }
-        if (resBtc.ok && isMounted) {
-          const data = await resBtc.json();
-          const p = parseFloat(data.price);
-          if (p > 0) setBtcPrice(p);
+        const res = await fetch("/api/v1/prices").catch(() => null);
+        if (res && res.ok && isMounted) {
+          const data = await res.json();
+          if (data.BNB && data.BNB > 0) setBnbPrice(data.BNB);
+          if (data.BTC && data.BTC > 0) setBtcPrice(data.BTC);
         }
       } catch {
         // Retain fallback prices
@@ -100,7 +92,7 @@ export const CalendarCard: React.FC = () => {
     };
 
     fetchLivePrices();
-    const interval = setInterval(fetchLivePrices, 4000);
+    const interval = setInterval(fetchLivePrices, 8000);
     return () => {
       isMounted = false;
       clearInterval(interval);

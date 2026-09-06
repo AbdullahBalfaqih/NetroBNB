@@ -123,8 +123,6 @@ ${binanceLiveContext || `Active Dashboard Coin: ${targetCoin}`}
               return NextResponse.json({
                 message_id: `msg-${Date.now()}`,
                 answer: cleanReply,
-                behavioral_score: isAnalysis ? 85 : undefined,
-                confidence: isAnalysis ? 0.94 : undefined,
                 active_asset: targetCoin,
                 suggested_actions: [
                   `تحليل عمق دفتر طلبات ${targetCoin}`,
@@ -200,8 +198,6 @@ Orderbook depth reflects steady absorption of taker selling near support levels.
     return NextResponse.json({
       message_id: `msg-${Date.now()}`,
       answer: smartAnswer,
-      behavioral_score: 84,
-      confidence: 0.92,
       active_asset: targetCoin,
       suggested_actions: [
         `تحليل دفتر طلبات ${targetCoin}`,
