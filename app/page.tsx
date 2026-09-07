@@ -64,7 +64,7 @@ export default function Home() {
           {/* Main Desktop Grid Layout: 9 Columns on Left & 3 Columns on Right */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-stretch">
             {/* Left 9-Column Block */}
-            <div className="lg:col-span-9 flex flex-col gap-3.5">
+            <div id="left-column-block" className="lg:col-span-9 flex flex-col gap-3.5">
               {/* Top Row: ProfileCard (3 cols) + Center Content Stack (6 cols) */}
               <div className="grid grid-cols-1 lg:grid-cols-9 gap-3.5 items-stretch">
                 {/* Profile Card (3 of 9 cols) */}
@@ -102,20 +102,20 @@ export default function Home() {
               </div>
 
               {/* Bottom Card: Crypto Market & Stocks Card Extending to Left */}
-              <motion.div variants={itemVariants}>
+              <motion.div variants={itemVariants} id="crypto-market-card-wrapper">
                 <CryptoMarketCard />
               </motion.div>
             </div>
 
             {/* Column 3: Far Right Stack (3 cols on lg) */}
-            <div className="lg:col-span-3 flex flex-col gap-3.5 h-full">
+            <div id="right-column-block" className="lg:col-span-3 flex flex-col gap-3.5 h-full min-h-0">
               {/* Calendar Widget Card */}
-              <motion.div variants={itemVariants}>
+              <motion.div variants={itemVariants} className="shrink-0">
                 <CalendarCard />
               </motion.div>
 
               {/* Ask CoreAI Card (Chat) */}
-              <motion.div variants={itemVariants} className="flex-1 flex flex-col min-h-0">
+              <motion.div id="ask-core-ai-wrapper" variants={itemVariants} className="flex-1 flex flex-col min-h-0 overflow-hidden">
                 <AskCoreAICard />
               </motion.div>
             </div>

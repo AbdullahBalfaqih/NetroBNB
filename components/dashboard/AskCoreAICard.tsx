@@ -94,13 +94,57 @@ export const AskCoreAICard: React.FC = () => {
   const modalEndRef = useRef<HTMLDivElement | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Dynamic suggestions tailored to the currently active cryptocurrency
-  const defaultSuggestions = useMemo(() => [
-    `Analyze ${selectedCoin.symbol} 24h`,
-    `Why is ${selectedCoin.symbol} moving?`,
-    `Compare ${selectedCoin.symbol} and ${selectedCoin.symbol === "ETH" ? "BTC" : "ETH"}`,
-    `Generate ${selectedCoin.symbol} Strategy`,
-  ], [selectedCoin.symbol]);
+  // Dynamic Height Sync to lock card bottom to the left column baseline on desktop
+  const [syncedHeight, setSyncedHeight] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    const updateHeight = () => {
+      if (typeof window === "undefined" || window.innerWidth < 1024) {
+        setSyncedHeight(undefined);
+        return;
+      }
+      const leftCol = document.getElementById("left-column-block");
+      const askWrapper = document.getElementById("ask-core-ai-wrapper");
+      if (leftCol && askWrapper) {
+        const leftRect = leftCol.getBoundingClientRect();
+        const askRect = askWrapper.getBoundingClientRect();
+        const exactHeight = Math.round(leftRect.bottom - askRect.top);
+        if (exactHeight > 240) {
+          setSyncedHeight(exactHeight);
+        }
+      }
+    };
+
+    updateHeight();
+    window.addEventListener("resize", updateHeight);
+    const timer1 = setTimeout(updateHeight, 150);
+    const timer2 = setTimeout(updateHeight, 600);
+    const leftCol = document.getElementById("left-column-block");
+    let observer: ResizeObserver | null = null;
+    if (leftCol && typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(updateHeight);
+      observer.observe(leftCol);
+    }
+
+    return () => {
+      window.removeEventListener("resize", updateHeight);
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      if (observer) observer.disconnect();
+    };
+  }, []);
+
+  // Dynamic suggestions tailored to the currently active cryptocurrency (guaranteed distinct comparison partner)
+  const defaultSuggestions = useMemo(() => {
+    const sym = selectedCoin.symbol.toUpperCase().trim();
+    const comparePartner = sym === "BNB" ? "BTC" : sym === "BTC" ? "ETH" : "BNB";
+    return [
+      `Analyze ${sym} 24h`,
+      `Why is ${sym} moving?`,
+      `Inspect ${sym} Orderbook Depth`,
+      `Compare ${sym} vs ${comparePartner}`,
+    ];
+  }, [selectedCoin.symbol]);
 
   // Preload GIFs
   useEffect(() => {
@@ -345,20 +389,24 @@ export const AskCoreAICard: React.FC = () => {
     setTimeout(() => setCopiedId(null), 1800);
   };
 
-  // Determine current active GIF state
-  let activeState: "normal" | "typing" | "thinking" = "normal";
-  if (isThinking) {
-    activeState = "thinking";
-  } else if (isTyping) {
-    activeState = "typing";
-  }
+  // Active suggestions with self-comparison bug prevention
+  const activeSuggestions = useMemo(() => {
+    const latestAssistantMsg = [...messages].reverse().find((m) => m.sender === "assistant");
+    const raw =
+      latestAssistantMsg?.suggested_actions && latestAssistantMsg.suggested_actions.length > 0
+        ? latestAssistantMsg.suggested_actions
+        : defaultSuggestions;
 
-  // Active suggestions
-  const latestAssistantMsg = [...messages].reverse().find((m) => m.sender === "assistant");
-  const activeSuggestions =
-    latestAssistantMsg?.suggested_actions && latestAssistantMsg.suggested_actions.length > 0
-      ? latestAssistantMsg.suggested_actions
-      : defaultSuggestions;
+    const sym = selectedCoin.symbol.toUpperCase().trim();
+    const comparePartner = sym === "BNB" ? "BTC" : sym === "BTC" ? "ETH" : "BNB";
+
+    return raw.map((item) => {
+      if (/compare\s+([a-z0-9]+)\s+(vs|and)\s+\1/i.test(item)) {
+        return `Compare ${sym} vs ${comparePartner}`;
+      }
+      return item;
+    });
+  }, [messages, defaultSuggestions, selectedCoin.symbol]);
 
   const renderFormattedText = (text: string) => {
     const lines = text.split("\n");
@@ -389,10 +437,17 @@ export const AskCoreAICard: React.FC = () => {
 
   return (
     <>
-      {/* In-Card ChatGPT-Style Interface */}
-      <div className="w-full bg-[#F4D014] rounded-xl p-3.5 shadow-figma-md flex flex-col justify-between border border-yellow-400/50 min-h-[360px] h-full">
+      {/* In-Card ChatGPT-Style Interface with locked height to match dashboard */}
+      <div
+        id="ask-core-ai-card-inner"
+        style={{
+          height: syncedHeight ? `${syncedHeight}px` : undefined,
+          maxHeight: syncedHeight ? `${syncedHeight}px` : undefined,
+        }}
+        className="w-full bg-[#F4D014] rounded-xl p-3.5 shadow-figma-md flex flex-col justify-between border border-yellow-400/50 overflow-hidden min-h-[340px] h-full"
+      >
         {/* Header: CoreAI Bot Avatar + Synced Coin Indicator */}
-        <div className="flex items-center justify-between pb-1">
+        <div className="flex items-center justify-between pb-1 shrink-0">
           <div className="flex items-center gap-2.5">
             {/* Smooth Cross-Fading GIF Avatar */}
             <div className="relative w-9 h-9 shrink-0 flex items-center justify-center">
@@ -456,8 +511,12 @@ export const AskCoreAICard: React.FC = () => {
           </div>
         </div>
 
-        {/* Scrollable Conversation Stream */}
-        <div className="flex-1 overflow-y-auto py-2.5 space-y-2.5 min-h-[180px] no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden flex flex-col justify-center">
+        {/* Scrollable Conversation Stream with internal scrolling and zero dashboard push */}
+        <div
+          className={`flex-1 overflow-y-auto py-2 space-y-2.5 min-h-0 pr-1 flex flex-col ${
+            messages.length === 0 ? "justify-center" : "justify-start"
+          } [scrollbar-width:thin] [scrollbar-color:rgba(0,0,0,0.2)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-black/20 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent`}
+        >
           {messages.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center p-3 my-auto select-none">
               {/* Interactive Typing Welcoming Text Above Logo (Doubled size) */}
@@ -591,7 +650,7 @@ export const AskCoreAICard: React.FC = () => {
                   <motion.span
                     animate={{ opacity: [0.65, 1, 0.65] }}
                     transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-                    className="text-[11.5px] text-gray-700 font-medium ml-0.5"
+                    className="text-[11px] text-[#1C1C1C]/75 font-medium ml-1"
                   >
                     Reasoning over {selectedCoin.name} telemetry...
                   </motion.span>
@@ -602,43 +661,59 @@ export const AskCoreAICard: React.FC = () => {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Main Suggestion Cards Grid (Styled like Portfolio Value / Unrealized P/L) */}
+        {/* Main Suggestion Cards Grid (When Empty) or Compact Chips (When Chatting) */}
         {!isThinking && (
-          <div className="grid grid-cols-2 gap-2 my-2 shrink-0">
-            {activeSuggestions.slice(0, 2).map((suggestion, sIdx) => {
-              const getSubtitle = (text: string) => {
-                const lower = text.toLowerCase();
-                if (lower.includes("24h") || lower.includes("trend")) return "24h Trend";
-                if (lower.includes("moving") || lower.includes("why") || lower.includes("whale") || lower.includes("flow")) return "Whale Flow";
-                if (lower.includes("depth") || lower.includes("orderbook")) return "Orderbook Depth";
-                if (lower.includes("compare")) return "Compare";
-                if (lower.includes("strategy") || lower.includes("route")) return "Smart Route";
-                return "Analysis";
-              };
+          messages.length === 0 ? (
+            <div className="grid grid-cols-2 gap-2 my-2 shrink-0">
+              {activeSuggestions.slice(0, 2).map((suggestion, sIdx) => {
+                const getSubtitle = (text: string) => {
+                  const lower = text.toLowerCase();
+                  if (lower.includes("24h") || lower.includes("trend")) return "24h Trend";
+                  if (lower.includes("moving") || lower.includes("why") || lower.includes("whale") || lower.includes("flow")) return "Whale Flow";
+                  if (lower.includes("depth") || lower.includes("orderbook")) return "Orderbook Depth";
+                  if (lower.includes("compare")) return "Compare";
+                  if (lower.includes("strategy") || lower.includes("route")) return "Smart Route";
+                  return "Analysis";
+                };
 
-              return (
-                <motion.div
+                return (
+                  <motion.div
+                    key={sIdx}
+                    whileHover={{ scale: 1.02, y: -1 }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ type: "spring", stiffness: 450, damping: 24 }}
+                    onClick={() => sendMessage(suggestion)}
+                    className="bg-[#FAFAFA] hover:bg-white rounded-lg p-2.5 sm:p-3 border border-gray-100 hover:border-gray-200 shadow-xs hover:shadow-sm flex flex-col justify-between transition-all duration-200 cursor-pointer group"
+                  >
+                    <div className="flex items-center justify-between text-[#444444] font-sans text-[12px] sm:text-[13px] whitespace-nowrap gap-1">
+                      <span className="truncate group-hover:text-black font-medium">{suggestion}</span>
+                      <ArrowUpRight
+                        size={15}
+                        className="text-gray-400 group-hover:text-black transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 shrink-0"
+                      />
+                    </div>
+                    <p className="font-sans text-[18px] sm:text-[20px] font-medium text-[#1C1C1C] mt-2 group-hover:translate-x-0.5 transition-transform">
+                      {getSubtitle(suggestion)}
+                    </p>
+                  </motion.div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 my-1.5 overflow-x-auto no-scrollbar py-0.5 shrink-0">
+              {activeSuggestions.slice(0, 3).map((suggestion, sIdx) => (
+                <button
                   key={sIdx}
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  whileTap={{ scale: 0.97 }}
-                  transition={{ type: "spring", stiffness: 450, damping: 24 }}
+                  type="button"
                   onClick={() => sendMessage(suggestion)}
-                  className="bg-[#FAFAFA] hover:bg-white rounded-lg p-2.5 sm:p-3 border border-gray-100 hover:border-gray-200 shadow-xs hover:shadow-sm flex flex-col justify-between transition-all duration-200 cursor-pointer group"
+                  className="px-2.5 py-1 rounded-full bg-black/10 hover:bg-black/20 text-[#1C1C1C] text-[11px] font-semibold transition-all shrink-0 cursor-pointer border-none flex items-center gap-1"
                 >
-                  <div className="flex items-center justify-between text-[#444444] font-sans text-[12px] sm:text-[13px] whitespace-nowrap gap-1">
-                    <span className="truncate group-hover:text-black font-medium">{suggestion}</span>
-                    <ArrowUpRight
-                      size={15}
-                      className="text-gray-400 group-hover:text-black transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 shrink-0"
-                    />
-                  </div>
-                  <p className="font-sans text-[18px] sm:text-[20px] font-medium text-[#1C1C1C] mt-2 group-hover:translate-x-0.5 transition-transform">
-                    {getSubtitle(suggestion)}
-                  </p>
-                </motion.div>
-              );
-            })}
-          </div>
+                  <span className="truncate max-w-[140px]">{suggestion}</span>
+                  <ArrowUpRight size={11} className="opacity-60" />
+                </button>
+              ))}
+            </div>
+          )
         )}
 
         {/* Square Borderless Input Field */}
@@ -908,41 +983,57 @@ export const AskCoreAICard: React.FC = () => {
             {/* Modal Input Bar */}
             <div className="p-4 bg-white border-none shrink-0 shadow-xs">
               {!isThinking && (
-                <div className="grid grid-cols-2 gap-2.5 mb-3">
-                  {activeSuggestions.slice(0, 4).map((suggestion, sIdx) => {
-                    const getSubtitle = (text: string) => {
-                      const lower = text.toLowerCase();
-                      if (lower.includes("24h") || lower.includes("trend")) return "24h Trend";
-                      if (lower.includes("moving") || lower.includes("why") || lower.includes("whale") || lower.includes("flow")) return "Whale Flow";
-                      if (lower.includes("depth") || lower.includes("orderbook")) return "Orderbook Depth";
-                      if (lower.includes("compare")) return "Compare";
-                      if (lower.includes("strategy") || lower.includes("route")) return "Smart Route";
-                      return "Analysis";
-                    };
+                messages.length === 0 ? (
+                  <div className="grid grid-cols-2 gap-2.5 mb-3">
+                    {activeSuggestions.slice(0, 4).map((suggestion, sIdx) => {
+                      const getSubtitle = (text: string) => {
+                        const lower = text.toLowerCase();
+                        if (lower.includes("24h") || lower.includes("trend")) return "24h Trend";
+                        if (lower.includes("moving") || lower.includes("why") || lower.includes("whale") || lower.includes("flow")) return "Whale Flow";
+                        if (lower.includes("depth") || lower.includes("orderbook")) return "Orderbook Depth";
+                        if (lower.includes("compare")) return "Compare";
+                        if (lower.includes("strategy") || lower.includes("route")) return "Smart Route";
+                        return "Analysis";
+                      };
 
-                    return (
-                      <motion.div
+                      return (
+                        <motion.div
+                          key={sIdx}
+                          whileHover={{ scale: 1.02, y: -2 }}
+                          whileTap={{ scale: 0.97 }}
+                          transition={{ type: "spring", stiffness: 450, damping: 24 }}
+                          onClick={() => sendMessage(suggestion)}
+                          className="bg-[#FAFAFA] hover:bg-white rounded-lg p-3 border border-gray-100 hover:border-gray-200 shadow-xs hover:shadow-sm flex flex-col justify-between transition-all duration-200 cursor-pointer group"
+                        >
+                          <div className="flex items-center justify-between text-[#444444] font-sans text-[13px] whitespace-nowrap gap-2">
+                            <span className="truncate group-hover:text-black font-medium">{suggestion}</span>
+                            <ArrowUpRight
+                              size={16}
+                              className="text-gray-400 group-hover:text-black transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 shrink-0"
+                            />
+                          </div>
+                          <p className="font-sans text-[20px] font-medium text-[#1C1C1C] mt-2 group-hover:translate-x-0.5 transition-transform">
+                            {getSubtitle(suggestion)}
+                          </p>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 mb-3 overflow-x-auto no-scrollbar py-0.5">
+                    {activeSuggestions.map((suggestion, sIdx) => (
+                      <button
                         key={sIdx}
-                        whileHover={{ scale: 1.02, y: -2 }}
-                        whileTap={{ scale: 0.97 }}
-                        transition={{ type: "spring", stiffness: 450, damping: 24 }}
+                        type="button"
                         onClick={() => sendMessage(suggestion)}
-                        className="bg-[#FAFAFA] hover:bg-white rounded-lg p-3 border border-gray-100 hover:border-gray-200 shadow-xs hover:shadow-sm flex flex-col justify-between transition-all duration-200 cursor-pointer group"
+                        className="px-3 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-800 text-[12px] font-medium transition-all shrink-0 cursor-pointer border border-gray-200/80 flex items-center gap-1.5 shadow-xs"
                       >
-                        <div className="flex items-center justify-between text-[#444444] font-sans text-[13px] whitespace-nowrap gap-2">
-                          <span className="truncate group-hover:text-black font-medium">{suggestion}</span>
-                          <ArrowUpRight
-                            size={16}
-                            className="text-gray-400 group-hover:text-black transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 shrink-0"
-                          />
-                        </div>
-                        <p className="font-sans text-[20px] font-medium text-[#1C1C1C] mt-2 group-hover:translate-x-0.5 transition-transform">
-                          {getSubtitle(suggestion)}
-                        </p>
-                      </motion.div>
-                    );
-                  })}
-                </div>
+                        <span>{suggestion}</span>
+                        <ArrowUpRight size={12} className="text-gray-500" />
+                      </button>
+                    ))}
+                  </div>
+                )
               )}
               <form
                 onSubmit={(e) => {
