@@ -125,6 +125,50 @@ NetroBNB's backend provides native implementations for the complete Binance Agen
 
 ---
 
+## 🤖 Binance Agent OS Deep Integration & Architecture
+
+NetroBNB provides native backend implementations for all 4 core pillars of the **Binance Agent OS Ecosystem**:
+
+```
+ ┌─────────────────────────────────────────────────────────────────────────────┐
+ │                         BINANCE AGENT OS CORE                               │
+ └──────────────────────┬───────────────────────────────┬──────────────────────┘
+                        │                               │
+        ┌───────────────▼───────────────┐  ┌────────────▼────────────────┐
+        │  Model Context Protocol (MCP) │  │    Binance Agentic Wallet     │
+        │      `/api/v1/mcp`            │  │  `/api/v1/agentic-wallet`     │
+        └───────────────┬───────────────┘  └────────────┬────────────────┘
+                        │                               │
+        ┌───────────────▼───────────────┐  ┌────────────▼────────────────┐
+        │     Curated Skill Hub         │  │ Risk Governance & Controls    │
+        │    `/api/v1/agent/skills`     │  │   `/api/v1/agent/config`      │
+        └───────────────────────────────┘  └─────────────────────────────┘
+```
+
+### 1. Model Context Protocol (MCP) Server Gateway (`/api/v1/mcp`)
+- Standardized MCP tool suite supporting `binance_read_market`, `binance_agentic_trade`, `binance_pay_x402`, and `binance_onchain_web3`.
+- Fully compliant with JSON-RPC 2.0 specifications for agentic inter-process communication.
+
+### 2. Risk Governance & Granular Permission Controls (`/api/v1/agent/config`)
+- Enforces strict safety limits for autonomous agents:
+  - **Max Daily Trade Limit**: $1,000 USD
+  - **Max Single Transaction**: $250 USD
+  - **Auto-Execution Guard**: Requires cryptographic Web3 signature or permission token
+  - **Allowed Asset Registry**: Restricted to verified pairs (BNB, BTC, ETH, SOL, USDT, AVAX, TON)
+
+### 3. Binance Agent Skill Hub (`/api/v1/agent/skills`)
+- Plug-and-play modular crypto skills library:
+  - 🐋 **Whale Telemetry Tracker**: Real-time monitoring of transactions > $100k USD.
+  - 🌾 **BSC Yield Optimizer**: Scans PancakeSwap & Binance Staking for top APYs.
+  - 📈 **DCA Strategy Automator**: Automated dollar-cost averaging execution engine.
+  - ⚡ **Cross-DEX Arbitrage Finder**: Detects instantaneous price spreads between Binance & DEXs.
+  - 💳 **Binance Pay x402 Micropayments**: Machine-to-machine automated settlements.
+
+### 4. Agentic Wallet & Machine-to-Machine Settlements (`/api/v1/agentic-wallet`)
+- Implements HTTP 402 (*Payment Required*) Binance Pay x402 protocol for machine-to-machine agentic micropayments and automated position management.
+
+---
+
 ## Repository Structure
 
 ```
