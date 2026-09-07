@@ -94,6 +94,45 @@ export const AskCoreAICard: React.FC = () => {
   const modalEndRef = useRef<HTMLDivElement | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Load chat memory from browser storage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("netro_ai_chat_history");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMessages(parsed);
+        }
+      }
+      const savedConv = localStorage.getItem("netro_ai_conv_id");
+      if (savedConv) {
+        setConversationId(savedConv);
+      }
+    } catch {}
+  }, []);
+
+  // Save chat memory to browser storage on change
+  useEffect(() => {
+    try {
+      if (messages.length > 0) {
+        localStorage.setItem("netro_ai_chat_history", JSON.stringify(messages.slice(-30)));
+      } else {
+        localStorage.removeItem("netro_ai_chat_history");
+      }
+      localStorage.setItem("netro_ai_conv_id", conversationId);
+    } catch {}
+  }, [messages, conversationId]);
+
+  const handleResetChat = () => {
+    setMessages(INITIAL_MESSAGES);
+    const newConv = `conv_${Date.now()}`;
+    setConversationId(newConv);
+    try {
+      localStorage.removeItem("netro_ai_chat_history");
+      localStorage.setItem("netro_ai_conv_id", newConv);
+    } catch {}
+  };
+
   // Dynamic Height Sync to lock card bottom to the left column baseline on desktop
   const [syncedHeight, setSyncedHeight] = useState<number | undefined>(undefined);
 
@@ -222,6 +261,10 @@ export const AskCoreAICard: React.FC = () => {
           signal: controller.signal,
           body: JSON.stringify({
             message: query,
+            history: messages.slice(-12).map((m) => ({
+              role: m.sender === "user" ? "user" : "assistant",
+              content: m.text,
+            })),
             conversation_id: conversationId,
             user_id: "default_user",
             active_asset: detected || selectedCoin.symbol,
@@ -500,12 +543,9 @@ export const AskCoreAICard: React.FC = () => {
 
           <div className="flex items-center gap-1">
             <button
-              onClick={() => {
-                setMessages(INITIAL_MESSAGES);
-                setConversationId(`conv_${Date.now()}`);
-              }}
+              onClick={handleResetChat}
               className="p-1 text-[#1C1C1C]/70 hover:text-[#1C1C1C] transition-colors cursor-pointer"
-              title="Reset Chat"
+              title="Reset Chat & Memory"
             >
               <RotateCcw size={14} />
             </button>
@@ -660,7 +700,7 @@ export const AskCoreAICard: React.FC = () => {
                     transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
                     className="text-[11px] text-[#1C1C1C]/75 font-medium ml-1"
                   >
-                    Reasoning over {selectedCoin.name} telemetry...
+                    NetroAI يفكّر ويحلل الذاكرة والسياق...
                   </motion.span>
                 </div>
               </motion.div>
@@ -784,12 +824,9 @@ export const AskCoreAICard: React.FC = () => {
 
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => {
-                    setMessages(INITIAL_MESSAGES);
-                    setConversationId(`conv_${Date.now()}`);
-                  }}
+                  onClick={handleResetChat}
                   className="h-8 px-3 rounded-lg bg-black/10 hover:bg-black/20 text-xs font-semibold text-[#1C1C1C] transition-colors flex items-center justify-center gap-1.5 cursor-pointer border-none"
-                  title="Clear Chat"
+                  title="Clear Chat & Memory"
                 >
                   <RotateCcw size={13} />
                   <span>Clear</span>
@@ -983,7 +1020,7 @@ export const AskCoreAICard: React.FC = () => {
                       transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
                       className="text-xs text-gray-700 font-medium ml-1"
                     >
-                      Reasoning over {selectedCoin.name} telemetry...
+                      NetroAI يفكّر ويسترجع الذاكرة والسياق...
                     </motion.span>
                   </div>
                 </motion.div>
