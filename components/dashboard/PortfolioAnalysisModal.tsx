@@ -1,21 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import {
-  X,
-  TrendingUp,
-  TrendingDown,
-  RefreshCw,
-  Wallet,
-  ShieldCheck,
-  Sparkles,
-  ExternalLink,
-  Layers,
-  ArrowRight,
-  Activity,
-  CheckCircle2,
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useCrypto } from "@/context/CryptoContext";
 
 interface PortfolioAnalysisModalProps {
@@ -30,473 +15,525 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({
   onAskNetroAI,
 }) => {
   const { fullAddress, isWalletConnected, setIsWalletModalOpen } = useCrypto();
-  const [timeframe, setTimeframe] = useState<"daily" | "weekly" | "monthly">("daily");
-  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"Chart" | "Reports" | "Table">("Chart");
+  const [searchQuery, setSearchQuery] = useState("");
   const [portfolio, setPortfolio] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"chart" | "reports" | "table">("chart");
-
-  const fetchPortfolio = async (tf: "daily" | "weekly" | "monthly") => {
-    setIsLoading(true);
-    try {
-      const url = fullAddress
-        ? `/api/v1/portfolio?address=${encodeURIComponent(fullAddress)}&timeframe=${tf}`
-        : `/api/v1/portfolio?timeframe=${tf}`;
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        setPortfolio(data);
-      }
-    } catch (e) {
-      console.error("Failed to fetch real on-chain portfolio:", e);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const [timeframe, setTimeframe] = useState<"daily" | "weekly" | "monthly">("weekly");
 
   useEffect(() => {
-    if (isOpen) {
-      fetchPortfolio(timeframe);
+    if (!isOpen) return;
+    async function loadRealData() {
+      try {
+        const url = fullAddress
+          ? `/api/v1/portfolio?address=${encodeURIComponent(fullAddress)}&timeframe=${timeframe}`
+          : `/api/v1/portfolio?timeframe=${timeframe}`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const d = await res.json();
+          setPortfolio(d);
+        }
+      } catch (e) {
+        console.error("Error loading portfolio:", e);
+      }
     }
-  }, [isOpen, timeframe, fullAddress]);
+    loadRealData();
+  }, [isOpen, fullAddress, timeframe]);
 
   if (!isOpen) return null;
 
-  const totalUsd = portfolio?.total_portfolio_usd || 0;
-  const pnlUsd = portfolio?.unrealized_pnl_usd || 0;
-  const pnlPct = portfolio?.unrealized_pnl_pct || 0;
-  const isPos = pnlUsd >= 0;
+  const totalNetWorth = portfolio?.total_portfolio_usd || 0;
+  const bnbBal = portfolio?.native_bnb_balance !== undefined ? portfolio.native_bnb_balance : 0;
+  const displayNetWorth = totalNetWorth > 0
+    ? `$${totalNetWorth.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : "$0.00";
 
-  const handleDeepAudit = () => {
-    const periodName =
-      timeframe === "daily" ? "Daily (24H)" : timeframe === "weekly" ? "Weekly (7D)" : "Monthly (30D)";
-    const prompt = `Analyze my verified on-chain BSC portfolio for ${periodName}. My wallet address is ${
-      fullAddress || "connected wallet"
-    }. Native BNB balance is ${portfolio?.native_bnb_balance || 0} BNB ($${totalUsd.toLocaleString(
-      "en-US",
-      { minimumFractionDigits: 2 }
-    )}). Provide on-chain health audit, gas optimization tips, and staking yield options on BNB Chain.`;
-    onClose();
-    if (onAskNetroAI) {
-      onAskNetroAI(prompt);
-    }
-  };
+  const formattedAddr = fullAddress
+    ? `${fullAddress.slice(0, 6)}...${fullAddress.slice(-4)}`
+    : "No wallet connected";
 
   return (
-    <AnimatePresence>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/70 backdrop-blur-sm animate-fadeIn select-none overflow-y-auto"
+      onClick={onClose}
+    >
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-sm animate-fadeIn"
-        onClick={onClose}
+        className="relative w-full max-w-[1680px] rounded-[24px] overflow-hidden shadow-2xl border border-gray-400/40 my-auto"
+        style={{
+          background: "linear-gradient(120deg, #DADCDC 0%, #CFD2D2 100%), #FFF",
+          fontFamily: "'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        }}
+        onClick={(e) => e.stopPropagation()}
       >
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96, y: 12 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.96, y: 12 }}
-          transition={{ type: "spring", stiffness: 420, damping: 30 }}
-          className="w-full max-w-5xl bg-[#E5E7EB] rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.35)] overflow-hidden flex flex-col max-h-[92vh] border border-gray-300 select-none"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Top Hero Yellow Banner (Brand Identity matching Clayton Plaza / NetroBNB) */}
-          <div className="bg-gradient-to-r from-[#F4D014] via-[#F8D82A] to-[#F4D014] px-6 sm:px-8 py-5 border-b border-yellow-400/40 relative shrink-0">
-            <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="p-3 sm:p-5 flex flex-col lg:flex-row gap-3 sm:gap-4 items-stretch">
+          {/* ================= LEFT ASIDE (405px) ================= */}
+          <aside className="w-full lg:w-[390px] xl:w-[405px] flex flex-col gap-2.5 shrink-0">
+            {/* Card 1: Portfolio Insights & Search Asset */}
+            <div className="rounded-[12px] bg-[#000] p-6 sm:p-7 flex flex-col justify-between text-white min-h-[170px]">
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-[#1C1C1C] text-[#F4D014] tracking-wide uppercase">
-                    On-Chain Verified &bull; BSC Mainnet
-                  </span>
-                  {isWalletConnected && (
-                    <span className="flex items-center gap-1 text-[11px] font-bold text-[#1C1C1C] bg-white/70 px-2 py-0.5 rounded-full">
-                      <CheckCircle2 size={12} className="text-emerald-600" /> Live Data
-                    </span>
-                  )}
-                </div>
-
-                <h2 className="font-sans text-[26px] sm:text-[32px] font-extrabold text-[#1C1C1C] leading-tight tracking-tight mt-1">
-                  Financial Portfolio Analytics
-                </h2>
-
-                <p className="font-sans text-[12.5px] sm:text-[13.5px] text-[#1C1C1C]/80 font-medium flex items-center gap-2 mt-0.5">
-                  <span>Network: BNB Smart Chain (Chain ID: 56)</span>
-                  <span>&bull;</span>
-                  <span>
-                    Wallet:{" "}
-                    {isWalletConnected && fullAddress ? (
-                      <strong className="font-mono text-[#1C1C1C]">
-                        {fullAddress.slice(0, 6)}...{fullAddress.slice(-4)}
-                      </strong>
-                    ) : (
-                      "No wallet connected"
-                    )}
-                  </span>
-                </p>
+                <h1 className="text-[28px] sm:text-[34px] font-normal leading-tight text-white tracking-tight">
+                  Portfolio Insights
+                </h1>
               </div>
 
-              {/* Controls */}
-              <div className="flex items-center gap-2">
-                {/* Timeframe Switcher */}
-                <div className="flex items-center bg-[#1C1C1C]/10 p-1 rounded-xl">
-                  {(["daily", "weekly", "monthly"] as const).map((tf) => {
-                    const label = tf === "daily" ? "Daily (24H)" : tf === "weekly" ? "Weekly (7D)" : "Monthly (30D)";
-                    const isActive = timeframe === tf;
-                    return (
-                      <button
-                        key={tf}
-                        onClick={() => setTimeframe(tf)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                          isActive
-                            ? "bg-[#1C1C1C] text-white shadow-sm"
-                            : "text-[#1C1C1C]/80 hover:text-[#1C1C1C] hover:bg-white/20"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
+              <div className="flex items-center justify-between pb-2 border-b border-[#BBB] mt-6">
+                <input
+                  type="text"
+                  placeholder="Search Asset"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-transparent border-none outline-none text-[#777] placeholder:text-[#777] text-[16px] w-full font-normal"
+                />
+                <div className="w-[18px] h-[18px] relative shrink-0 opacity-75">
+                  <div className="w-3 h-3 rounded-full border border-[#777]" />
+                  <div className="w-[6px] h-[2px] bg-[#777] absolute -bottom-0.5 -right-0.5 rotate-45" />
                 </div>
+              </div>
+            </div>
 
-                <button
-                  onClick={() => fetchPortfolio(timeframe)}
-                  className="p-2 rounded-xl bg-[#1C1C1C]/10 hover:bg-[#1C1C1C]/20 text-[#1C1C1C] transition-all cursor-pointer"
-                  title="Refresh On-Chain Balances"
-                >
-                  <RefreshCw size={17} className={isLoading ? "animate-spin" : ""} />
-                </button>
+            {/* Card 2: Asset (Holdings list) */}
+            <div className="rounded-[12px] bg-[#0B0B0B] p-6 sm:p-7 flex flex-col gap-4 text-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-[#777] text-[13px]">▼</span>
+                  <span className="text-white text-[17px] font-medium">Asset</span>
+                </div>
+                <span className="text-white text-[20px] font-medium">
+                  {portfolio?.balances?.length || 2}
+                </span>
+              </div>
 
+              {/* Asset 1: Real Native BNB Vault */}
+              <div className="flex items-center gap-3 pt-2">
+                <span className="text-[#777] text-[12px]">▶</span>
+                <img
+                  src="https://api.builder.io/api/v1/image/assets/TEMP/a980541b8ea56fc33fc03f4417b24fb5a47f1296?width=94"
+                  alt="BNB Native Vault"
+                  className="w-[47px] h-[47px] rounded-[12px] object-cover shrink-0"
+                />
+                <div className="flex flex-col">
+                  <span className="text-white text-[16px] font-medium leading-tight">
+                    {isWalletConnected ? "BNB Smart Chain Vault" : "Forest Lake Centre"}
+                  </span>
+                  <span className="text-[#777] text-[13px] font-normal leading-tight mt-0.5">
+                    {isWalletConnected
+                      ? `${bnbBal.toFixed(4)} BNB • Native Gas Asset`
+                      : "141X 3P | BPK OOC | S7K Leased"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Asset 2: Clayton Plaza / BEP-20 */}
+              <div className="flex items-center gap-3 pt-1">
+                <span className="text-[#777] text-[12px]">▶</span>
+                <img
+                  src="https://api.builder.io/api/v1/image/assets/TEMP/23759f0bd16f427fe6a1f15fc7fd795f9f63fd97?width=94"
+                  alt="Clayton Plaza"
+                  className="w-[47px] h-[47px] rounded-[12px] object-cover shrink-0"
+                />
+                <div className="flex flex-col">
+                  <span className="text-white text-[16px] font-medium leading-tight">
+                    Clayton Plaza
+                  </span>
+                  <span className="text-[#777] text-[13px] font-normal leading-tight mt-0.5">
+                    {isWalletConnected
+                      ? `Verified BEP-20 • Chain ID: 56`
+                      : "225X 5P | 8TK OOC | B7K Leased"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3: Vaults & Tasks (12 items) */}
+            <div className="rounded-[12px] bg-[#0B0B0B] p-6 sm:p-7 flex flex-col gap-3 text-white flex-1 overflow-hidden">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-[#777] text-[13px]">▼</span>
+                  <span className="text-white text-[20px] font-medium">Vaults</span>
+                </div>
+                <span className="text-white text-[20px] font-medium">12</span>
+              </div>
+
+              {/* Vault items */}
+              <div className="flex items-center gap-3 pt-2">
+                <span className="text-[#777] text-[12px]">▶</span>
+                <img
+                  src="https://api.builder.io/api/v1/image/assets/TEMP/cccb7a8f23ab10c75ed47dbe746c892803d8aa01?width=94"
+                  alt="Forest Lake"
+                  className="w-[47px] h-[47px] rounded-[12px] object-cover shrink-0"
+                />
+                <div className="flex flex-col">
+                  <span className="text-white text-[16px] font-medium leading-tight">
+                    Forest Lake Centre
+                  </span>
+                  <span className="text-[#777] text-[13px] leading-tight mt-0.5">
+                    147X SF | 89% OOC | S7K Leased
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 pt-1">
+                <span className="text-[#777] text-[12px]">▶</span>
+                <img
+                  src="https://api.builder.io/api/v1/image/assets/TEMP/b8066326a5ce04c3bbe1edb5c2929855e63cc96b?width=94"
+                  alt="Clayton Plaza"
+                  className="w-[47px] h-[47px] rounded-[12px] object-cover shrink-0"
+                />
+                <div className="flex flex-col">
+                  <span className="text-white text-[16px] font-medium leading-tight">
+                    Clayton Plaza
+                  </span>
+                  <span className="text-[#777] text-[13px] leading-tight mt-0.5">
+                    2255 SF | 61% OOC | 57K Leased
+                  </span>
+                </div>
+              </div>
+
+              {/* Sub items: Folder, Task Templates, Casa Analytics */}
+              <div className="flex items-center gap-3 py-1.5 pl-4">
+                <div className="w-[17px] h-[12px] rounded-[2px] bg-[#AAA] shrink-0" />
+                <span className="text-[#777] text-[15px]">Folder</span>
+              </div>
+
+              <div className="flex items-center gap-3 py-1.5 pl-4">
+                <div className="w-[16px] h-[17px] rounded-[3px] bg-[#999] flex items-center justify-center text-[9px] text-[#EEE] shrink-0">
+                  ▦
+                </div>
+                <span className="text-[#777] text-[15px]">Task Templates</span>
+              </div>
+
+              <div className="flex items-center gap-3 py-1.5 pl-4">
+                <span className="text-[#111] text-[16px] shrink-0 bg-white w-4 h-4 rounded-full flex items-center justify-center text-[10px]">
+                  ♟
+                </span>
+                <span className="text-[#6D6E6E] text-[15px] font-medium">Casa Analytics</span>
+              </div>
+
+              <div className="flex items-center gap-3 py-1.5 pl-4">
+                <span className="text-[#777] text-[16px] shrink-0">♟</span>
+                <span className="text-[#777] text-[15px]">Adiers</span>
+              </div>
+
+              {/* Maplewood Plaza */}
+              <div className="flex items-center gap-3 pt-1">
+                <span className="text-[#777] text-[12px]">▶</span>
+                <img
+                  src="https://api.builder.io/api/v1/image/assets/TEMP/15ee1d6e1fd92013a5aa6f220a9f18524f16eb2c?width=94"
+                  alt="Maplewood Plaza"
+                  className="w-[47px] h-[47px] rounded-[12px] object-cover shrink-0"
+                />
+                <div className="flex flex-col">
+                  <span className="text-white text-[16px] font-medium leading-tight">
+                    Maplewood Plaza
+                  </span>
+                  <span className="text-[#777] text-[13px] leading-tight mt-0.5">
+                    5325 SF | T9S OOC | B9% Leased
+                  </span>
+                </div>
+              </div>
+
+              {/* Ualtrdge Business Park */}
+              <div className="flex items-center gap-3 pt-1">
+                <span className="text-[#777] text-[12px]">▶</span>
+                <img
+                  src="https://api.builder.io/api/v1/image/assets/TEMP/296a3115663ec028acaa6d23f704fd13dacead2b?width=94"
+                  alt="Ualtrdge"
+                  className="w-[47px] h-[47px] rounded-[12px] object-cover shrink-0"
+                />
+                <div className="flex flex-col">
+                  <span className="text-white text-[16px] font-medium leading-tight">
+                    Ualtrdge Business Park
+                  </span>
+                  <span className="text-[#777] text-[13px] leading-tight mt-0.5">
+                    376N SF | 89S OOC | B1% Leased
+                  </span>
+                </div>
+              </div>
+
+              {/* Birchwood Estate */}
+              <div className="flex items-center gap-3 pt-1">
+                <span className="text-[#777] text-[12px]">▶</span>
+                <img
+                  src="https://api.builder.io/api/v1/image/assets/TEMP/6bd9273453cf85cd0751da917121c105614dabe9?width=94"
+                  alt="Birchwood Estate"
+                  className="w-[47px] h-[47px] rounded-[12px] object-cover shrink-0"
+                />
+                <div className="flex flex-col">
+                  <span className="text-white text-[16px] font-medium leading-tight">
+                    Birchwood Estate
+                  </span>
+                  <span className="text-[#777] text-[13px] leading-tight mt-0.5">
+                    376N SF | 695 OOC | 99% Leased
+                  </span>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          {/* ================= RIGHT MAIN (FLEX-1) ================= */}
+          <main className="flex-1 flex flex-col gap-2.5 min-w-0">
+            {/* 1. TOP YELLOW HERO SECTION (#FFD920) */}
+            <div className="relative rounded-[12px] bg-[#FFD920] p-6 sm:p-9 overflow-hidden flex flex-col justify-between min-h-[380px]">
+              {/* Top Controls / Close */}
+              <div className="absolute top-6 right-6 flex items-center gap-3 z-20 text-[#171717]">
                 <button
                   onClick={onClose}
-                  className="p-2 rounded-xl bg-[#1C1C1C]/10 hover:bg-[#1C1C1C]/20 text-[#1C1C1C] transition-all cursor-pointer"
+                  className="text-[28px] leading-none hover:opacity-75 transition-opacity cursor-pointer"
                   title="Close"
                 >
-                  <X size={19} />
+                  ×
                 </button>
+                <span className="text-[19px] cursor-pointer hover:opacity-75">◒</span>
+                <span className="text-[20px] cursor-pointer hover:opacity-75">➜</span>
+                <span className="text-[24px] cursor-pointer hover:opacity-75 leading-none">⋮</span>
+              </div>
+
+              {/* Hero Title & Subtitle */}
+              <div className="max-w-[720px] z-10">
+                <h2 className="text-[44px] sm:text-[62px] md:text-[66px] font-light text-[#171717] leading-[1.05] tracking-[-2.5px]">
+                  NetroBNB History
+                </h2>
+                <p className="text-[#171717] text-[14px] leading-relaxed mt-2 font-normal">
+                  2556 SP 1225 Avol, St. Carlex, TS6&apos;022 &bull; 1-320-CDT1 Teriting Info›
+                </p>
+                <div className="flex items-center gap-2 mt-2 text-xs text-[#171717]/90 font-medium">
+                  <span className="bg-black/15 px-2.5 py-0.5 rounded-full">
+                    BSC Mainnet &bull; Chain ID: 56
+                  </span>
+                  <span className="bg-black/15 px-2.5 py-0.5 rounded-full font-mono">
+                    {formattedAddr}
+                  </span>
+                </div>
+              </div>
+
+              {/* Rotated 3D Artwork Image exactly from Figma */}
+              <img
+                src="https://api.builder.io/api/v1/image/assets/TEMP/09c4d3814be6295118a9973bdf3095448d0b63b2?width=636"
+                alt="Clayton Plaza Architecture"
+                className="absolute right-[-40px] sm:right-0 top-[-20px] sm:top-[-40px] w-[320px] sm:w-[420px] md:w-[480px] h-auto object-contain pointer-events-none select-none z-0 opacity-95"
+              />
+
+              {/* Latest Transactions Avatars Row */}
+              <div className="mt-8 z-10 flex flex-col gap-2">
+                <span className="text-[#171717] text-[14px] font-normal">
+                  Latest Transactions
+                </span>
+                <div className="flex items-center gap-4">
+                  <img
+                    src="https://api.builder.io/api/v1/image/assets/TEMP/d5ac2d16b667ee8a3a376326c6ac4e226ec81b54?width=280"
+                    alt="Transaction parties"
+                    className="h-[52px] w-auto object-contain rounded-[8px]"
+                  />
+                  <button
+                    onClick={() => {
+                      if (onAskNetroAI) {
+                        onClose();
+                        onAskNetroAI("Show all latest transactions and audit on-chain history for my wallet.");
+                      }
+                    }}
+                    className="text-[#171717] text-[14px] font-medium hover:underline cursor-pointer"
+                  >
+                    See All
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Body: Split Layout (Left Sidebar + Right Analytics Dashboard matching image 2) */}
-          <div className="flex-1 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 gap-5 p-5 sm:p-6 no-scrollbar">
-            {/* Left Column: Real Assets & Holdings List (4 of 12 cols) */}
-            <div className="lg:col-span-4 flex flex-col gap-3.5">
-              <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
-                <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-                  <h3 className="font-sans text-[15px] font-bold text-[#1C1C1C] flex items-center gap-1.5">
-                    <Layers size={16} className="text-[#F4D014]" />
-                    On-Chain Vaults & Assets
+            {/* 2. MIDDLE STATS SECTION (rgba(250, 250, 250, 0.95)) */}
+            <div className="rounded-[12px] bg-[#FAFAFAF0] p-6 sm:p-8 flex flex-col xl:flex-row items-stretch justify-between gap-6 border border-white/60 shadow-sm">
+              {/* Left Occupancy / Net Worth Index */}
+              <div className="flex-1 flex flex-col justify-between min-w-[280px]">
+                <h3 className="text-[#171717] text-[21px] font-normal">
+                  Occupancy Index
+                </h3>
+
+                <div className="my-3 text-center">
+                  <span className="text-[#888] text-[16px] block">Iniov</span>
+                  <span className="text-[#111] text-[58px] sm:text-[67px] font-light leading-none">
+                    132
+                  </span>
+                </div>
+
+                {/* Horizontal Gradient Comparison Bars matching Figma */}
+                <div className="flex items-center justify-center gap-8 py-3 border-b border-[#AAA]">
+                  <div
+                    className="w-[105px] h-[39px] flex items-end justify-center pb-1.5"
+                    style={{
+                      background: "linear-gradient(0deg, #EEE 0%, rgba(238, 238, 238, 0.00) 100%)",
+                    }}
+                  >
+                    <span className="text-[#171717] text-[16px] font-normal">-2.6%</span>
+                  </div>
+
+                  <div
+                    className="w-[105px] h-[64px] flex items-end justify-center pb-1.5"
+                    style={{
+                      background: "linear-gradient(0deg, #EC1313 0%, #F6D4C9 100%)",
+                    }}
+                  >
+                    <span className="text-[#171717] text-[16px] font-normal">-7.3%</span>
+                  </div>
+                </div>
+
+                {/* MoM & YoY Changes */}
+                <div className="flex items-center justify-around pt-3 text-center">
+                  <div>
+                    <span className="text-[#777] text-[15px] block">MoM Change</span>
+                    <span className="text-[#229776] text-[18px] font-medium block mt-0.5">
+                      +7.3 ⌃
+                    </span>
+                    <span className="text-[#777] text-[14px]">⌄</span>
+                  </div>
+                  <div>
+                    <span className="text-[#777] text-[15px] block">YoY Change</span>
+                    <span className="text-[#777] text-[18px] font-medium block mt-0.5">
+                      --
+                    </span>
+                    <span className="text-[#777] text-[14px]">⌄</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Divider on XL */}
+              <div className="hidden xl:block w-[1px] bg-gray-200 self-stretch" />
+
+              {/* Right Sub-metrics: Residential Rental Units & Commercial Rental Space */}
+              <div className="flex-1 flex flex-col justify-between gap-6">
+                <div>
+                  <h3 className="text-[#171717] text-[20px] font-normal">
+                    Residential Rental Units
                   </h3>
-                  <span className="text-[11px] font-bold bg-gray-100 px-2 py-0.5 rounded-full text-gray-700">
-                    {portfolio?.balances?.length || 0} Assets
-                  </span>
+                  <div className="flex items-baseline gap-3 mt-2">
+                    <span className="text-[#171717] text-[56px] sm:text-[66px] font-light leading-none">
+                      56
+                    </span>
+                    <span className="text-[#229776] text-[17px] font-light">
+                      +12.2 ◆
+                    </span>
+                  </div>
                 </div>
 
-                {/* Real Wallet Holdings List */}
-                <div className="divide-y divide-gray-100 mt-2">
-                  {isWalletConnected && portfolio?.balances && portfolio.balances.length > 0 ? (
-                    portfolio.balances.map((token: any) => (
-                      <div key={token.asset} className="py-3 flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          {token.icon ? (
-                            <img
-                              src={token.icon}
-                              alt={token.asset}
-                              className="w-8 h-8 rounded-full object-contain bg-gray-50 p-0.5 shadow-xs"
-                              onError={(e: any) => (e.target.style.display = "none")}
-                            />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-[#F4D014] text-[#1C1C1C] font-bold text-xs flex items-center justify-center">
-                              {token.asset.slice(0, 3)}
-                            </div>
-                          )}
-                          <div>
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-bold text-[14px] text-[#1C1C1C] leading-none">
-                                {token.asset}
-                              </span>
-                              {token.is_native && (
-                                <span className="text-[9px] bg-yellow-100 text-yellow-800 font-bold px-1.5 py-0.5 rounded">
-                                  Gas
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-[11px] text-gray-500 font-mono">
-                              {token.amount > 0 ? Number(token.amount).toFixed(4) : "0.0000"} {token.asset}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="text-right">
-                          <p className="font-sans font-bold text-[13.5px] text-[#1C1C1C] leading-tight">
-                            ${Number(token.value_usd || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </p>
-                          <span className="text-[10.5px] text-emerald-600 font-semibold block">
-                            {token.daily_chg}
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="py-6 text-center">
-                      <Wallet size={28} className="mx-auto text-gray-400 mb-2" />
-                      <p className="text-xs font-semibold text-gray-600">No wallet connected</p>
-                      <button
-                        onClick={() => setIsWalletModalOpen(true)}
-                        className="mt-2 text-xs font-bold text-[#1C1C1C] bg-[#F4D014] px-3 py-1.5 rounded-lg shadow-xs hover:bg-yellow-400 cursor-pointer"
-                      >
-                        Connect Wallet
-                      </button>
-                    </div>
-                  )}
+                <div className="pt-4 border-t border-gray-100">
+                  <h3 className="text-[#171717] text-[20px] font-normal">
+                    Commeial Rental Space
+                  </h3>
+                  <div className="flex items-baseline gap-3 mt-2">
+                    <span className="text-[#171717] text-[56px] sm:text-[66px] font-light leading-none">
+                      44
+                    </span>
+                    <span className="text-[#FF0E0E] text-[17px] font-light">
+                      -2.6 ◆
+                    </span>
+                  </div>
                 </div>
               </div>
+            </div>
 
-              {/* On-Chain Activity Status Card */}
-              <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 space-y-2.5">
-                <h4 className="font-sans text-[13.5px] font-bold text-[#1C1C1C] flex items-center gap-1.5">
-                  <Activity size={15} className="text-[#F4D014]" />
-                  BSC On-Chain Telemetry
-                </h4>
+            {/* 3. BOTTOM YELLOW PROPERTY REVENUE SECTION (#FFD920) */}
+            <div className="rounded-[12px] bg-[#FFD920] p-6 sm:p-7 flex flex-col justify-between relative overflow-hidden">
+              {/* Header with Tabs & Filter */}
+              <div className="flex flex-wrap items-center justify-between gap-4 z-10">
+                <h3 className="text-[#171717] text-[21px] font-normal">
+                  Property revenue
+                </h3>
 
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="bg-[#F8F9FA] p-2.5 rounded-xl">
-                    <span className="text-gray-500 block text-[10.5px]">Tx Nonce</span>
-                    <strong className="text-sm font-bold text-[#1C1C1C]">
-                      {portfolio?.tx_count !== undefined ? portfolio.tx_count : "--"}
-                    </strong>
-                  </div>
-                  <div className="bg-[#F8F9FA] p-2.5 rounded-xl">
-                    <span className="text-gray-500 block text-[10.5px]">BNB Spot Price</span>
-                    <strong className="text-sm font-bold text-[#1C1C1C]">
-                      ${portfolio?.native_bnb_price_usd ? Number(portfolio.native_bnb_price_usd).toFixed(2) : "652.50"}
-                    </strong>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
-                  <span>Explorer: BscScan</span>
-                  {fullAddress && (
-                    <a
-                      href={`https://bscscan.com/address/${fullAddress}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 font-semibold hover:underline flex items-center gap-0.5"
+                {/* Tabs: Chart | Reports | Table */}
+                <div className="flex items-center gap-8 sm:gap-12">
+                  {(["Chart", "Reports", "Table"] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={`text-[16px] transition-colors cursor-pointer ${
+                        activeTab === tab
+                          ? "text-[#111] font-bold border-b-2 border-[#111] pb-0.5"
+                          : "text-[#777] font-normal hover:text-[#111]"
+                      }`}
                     >
-                      View on BscScan <ExternalLink size={10} />
-                    </a>
-                  )}
+                      {tab}
+                    </button>
+                  ))}
                 </div>
+
+                {/* Filtered by 2025-2026 */}
+                <div className="flex items-center gap-1.5 text-[15px] text-[#111]">
+                  <span className="font-normal text-[#777]">Filtered by</span>
+                  <span className="font-semibold">2025-2026</span>
+                  <span className="text-[12px]">▼</span>
+                </div>
+              </div>
+
+              {/* SVG Wave Line Chart & Gradient Histogram Bars matching Figma 1:1 */}
+              <div className="relative w-full my-6 pt-4">
+                {/* Green Highlight Badge with Live Net Worth (like $1.5 m in Figma) */}
+                <div className="flex justify-center sm:justify-end pr-8 sm:pr-24 mb-1">
+                  <div className="bg-[#39A47E] text-white text-[15px] font-medium px-4 py-1.5 rounded-[3px] shadow-sm">
+                    {displayNetWorth}
+                  </div>
+                </div>
+
+                {/* SVG Curve Line */}
+                <div className="relative w-full h-[120px] overflow-hidden">
+                  <svg
+                    className="w-full h-full"
+                    viewBox="0 0 760 120"
+                    preserveAspectRatio="none"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M0 100L55 45L112 65L220 25L280 50L386 85L445 28L500 76L560 100L670 44V120"
+                      stroke="#269B79"
+                      strokeWidth="2.5"
+                    />
+                    <circle cx="55" cy="45" r="5" fill="#269B79" stroke="#111" strokeWidth="2" />
+                    <circle cx="112" cy="65" r="5" fill="#269B79" stroke="#111" strokeWidth="2" />
+                    <circle cx="220" cy="25" r="5" fill="#269B79" stroke="#111" strokeWidth="2" />
+                    <circle cx="386" cy="85" r="5" fill="#269B79" stroke="#111" strokeWidth="2" />
+                    <circle cx="445" cy="28" r="5" fill="#269B79" stroke="#111" strokeWidth="2" />
+                    <circle cx="560" cy="100" r="5" fill="#269B79" stroke="#111" strokeWidth="2" />
+                    <circle cx="670" cy="44" r="5" fill="#269B79" stroke="#111" strokeWidth="2" />
+                  </svg>
+                </div>
+
+                {/* Histogram Bars underneath the wave */}
+                <div className="grid grid-cols-12 gap-1 sm:gap-2 items-end h-[50px] opacity-20 mt-1">
+                  {[55, 55, 85, 55, 55, 85, 55, 55, 85, 55, 55, 85].map((h, i) => (
+                    <div
+                      key={i}
+                      style={{ height: `${h}%` }}
+                      className="bg-[#000] rounded-t-sm w-full"
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Timeline Months exactly from Figma */}
+              <div className="flex items-center justify-between text-[14px] text-[#666] pt-2 overflow-x-auto no-scrollbar font-normal">
+                <span>Jan 23</span>
+                <span>Feb</span>
+                <span>Mar</span>
+                <span>Apr</span>
+                <span>May</span>
+                <span>Jun</span>
+                <span>Jul</span>
+                <span>Aug</span>
+                <span>Sep</span>
+                <span>Cet</span>
+                <span>Nov</span>
+                <span>Dec</span>
+                <span>Jan 24</span>
+                <span>Feb</span>
+                <span>Mar</span>
+                <span>Apr</span>
+                <span>May</span>
+                <span>Jun</span>
+                <span>Jul</span>
+                <span>Aug</span>
+                <span>Sep</span>
               </div>
             </div>
-
-            {/* Right Main Analytics Stack (8 of 12 cols, matching image 2) */}
-            <div className="lg:col-span-8 flex flex-col gap-4">
-              {/* Row 1: Key Metrics Cards (Clean white with yellow bar charts) */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                {/* Card 1: Net Worth Index */}
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span className="font-medium">Total Net Worth</span>
-                    <span className={`flex items-center font-bold ${isPos ? "text-emerald-600" : "text-rose-600"}`}>
-                      {isPos ? <TrendingUp size={13} className="mr-0.5" /> : <TrendingDown size={13} className="mr-0.5" />}
-                      {isPos ? "+" : ""}{pnlPct}%
-                    </span>
-                  </div>
-
-                  <div className="my-2">
-                    <p className="font-sans text-[28px] sm:text-[32px] font-black text-[#1C1C1C] leading-none">
-                      ${totalUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
-                    <span className="text-[11px] text-gray-400 block mt-1">
-                      {timeframe === "daily" ? "24h P&L:" : timeframe === "weekly" ? "7d P&L:" : "30d P&L:"}{" "}
-                      <strong className={isPos ? "text-emerald-600" : "text-rose-600"}>
-                        {isPos ? "+$" : "-$"}{Math.abs(pnlUsd).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                      </strong>
-                    </span>
-                  </div>
-
-                  <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden mt-1">
-                    <div className="bg-[#F4D014] h-full rounded-full" style={{ width: totalUsd > 0 ? "75%" : "0%" }} />
-                  </div>
-                </div>
-
-                {/* Card 2: Active Holdings & Bar Visualizer (Matching image 2 style) */}
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span className="font-medium">Active BSC Assets</span>
-                    <span className="text-emerald-600 font-bold flex items-center">
-                      <TrendingUp size={12} className="mr-0.5" /> +100% On-Chain
-                    </span>
-                  </div>
-
-                  <div className="flex items-baseline justify-between my-1">
-                    <p className="font-sans text-[28px] sm:text-[32px] font-black text-[#1C1C1C] leading-none">
-                      {portfolio?.metrics?.active_assets_count || (portfolio?.balances?.length || 0)}
-                    </p>
-
-                    {/* Mini Histogram Bars matching Image 2 */}
-                    <div className="flex items-end gap-1 h-8">
-                      <div className="w-2 bg-gray-200 rounded-xs h-3" />
-                      <div className="w-2 bg-gray-200 rounded-xs h-5" />
-                      <div className="w-2 bg-[#F4D014] rounded-xs h-8" />
-                      <div className="w-2 bg-gray-200 rounded-xs h-4" />
-                      <div className="w-2 bg-gray-300 rounded-xs h-6" />
-                    </div>
-                  </div>
-
-                  <span className="text-[11px] text-gray-400 block">
-                    Native BNB + Verified BEP20 Tokens
-                  </span>
-                </div>
-
-                {/* Card 3: Health Score & Resiliency */}
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span className="font-medium">Health & Risk Index</span>
-                    <span className="text-emerald-600 font-bold flex items-center">
-                      <ShieldCheck size={13} className="mr-0.5" /> Verified
-                    </span>
-                  </div>
-
-                  <div className="flex items-baseline justify-between my-1">
-                    <p className="font-sans text-[28px] sm:text-[32px] font-black text-[#1C1C1C] leading-none">
-                      {portfolio?.metrics?.health_score || 88}
-                    </p>
-
-                    {/* Mini Histogram Bars matching Image 2 */}
-                    <div className="flex items-end gap-1 h-8">
-                      <div className="w-2 bg-gray-200 rounded-xs h-4" />
-                      <div className="w-2 bg-gray-300 rounded-xs h-5" />
-                      <div className="w-2 bg-gray-300 rounded-xs h-4" />
-                      <div className="w-2 bg-[#F4D014] rounded-xs h-8" />
-                      <div className="w-2 bg-[#1C1C1C] rounded-xs h-7" />
-                    </div>
-                  </div>
-
-                  <span className="text-[11px] text-gray-400 block">
-                    Liquidation Risk: Zero &bull; Sharpe: {portfolio?.metrics?.sharpe_ratio || 1.92}
-                  </span>
-                </div>
-              </div>
-
-              {/* Row 2: Performance Timeline & Revenue Chart (Matching Bottom of Image 2) */}
-              <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 flex flex-col justify-between">
-                {/* Chart Header */}
-                <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-gray-100">
-                  <div>
-                    <h3 className="font-sans text-[16px] font-bold text-[#1C1C1C]">
-                      Portfolio Performance &amp; Equity Curve
-                    </h3>
-                    <span className="text-xs text-gray-400">
-                      Evaluated on {timeframe.toUpperCase()} horizon with real on-chain pricing
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className="flex items-center bg-gray-100 p-0.5 rounded-lg">
-                      {(["chart", "reports", "table"] as const).map((tab) => (
-                        <button
-                          key={tab}
-                          onClick={() => setActiveTab(tab)}
-                          className={`px-3 py-1 rounded-md font-semibold capitalize transition-all cursor-pointer ${
-                            activeTab === tab ? "bg-white text-[#1C1C1C] shadow-xs" : "text-gray-500 hover:text-black"
-                          }`}
-                        >
-                          {tab}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Timeline Chart Visualization matching Image 2 */}
-                <div className="py-4">
-                  {/* Green Tag for Current Net Worth (like $1.8 M in image 2) */}
-                  <div className="flex justify-end mb-2">
-                    <div className="bg-emerald-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-md shadow-xs flex items-center gap-1">
-                      <span>Live Value:</span>
-                      <span>${totalUsd.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
-                    </div>
-                  </div>
-
-                  {/* Histogram Bars with Netro Yellow Highlighting */}
-                  <div className="grid grid-cols-12 gap-2 sm:gap-3 items-end h-32 pt-4 border-b border-gray-100">
-                    {[
-                      { label: "1", h: "35%", active: false },
-                      { label: "2", h: "45%", active: false },
-                      { label: "3", h: "38%", active: false },
-                      { label: "4", h: "52%", active: false },
-                      { label: "5", h: "60%", active: false },
-                      { label: "6", h: "48%", active: false },
-                      { label: "7", h: "68%", active: false },
-                      { label: "8", h: "75%", active: false },
-                      { label: "9", h: "82%", active: false },
-                      { label: "10", h: "78%", active: false },
-                      { label: "11", h: "90%", active: false },
-                      { label: "Now", h: "98%", active: true },
-                    ].map((bar, bIdx) => (
-                      <div key={bIdx} className="flex flex-col items-center gap-1.5 h-full justify-end">
-                        <div
-                          style={{ height: bar.h }}
-                          className={`w-full rounded-t-md transition-all duration-300 ${
-                            bar.active
-                              ? "bg-[#F4D014] shadow-sm ring-2 ring-[#F4D014]/40"
-                              : "bg-gray-200/80 hover:bg-gray-300"
-                          }`}
-                          title={`Interval ${bar.label}`}
-                        />
-                        <span className="text-[10px] text-gray-400 font-mono">{bar.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Footer of Chart */}
-                <div className="flex flex-wrap items-center justify-between text-xs text-gray-500 pt-2">
-                  <span>Filtered by: Real-Time BNB Smart Chain Telemetry</span>
-                  <span className="font-semibold text-[#1C1C1C]">
-                    Chain ID: 56 &bull; Verified Zero Mock
-                  </span>
-                </div>
-              </div>
-
-              {/* NetroAI Intelligent Financial Audit Card */}
-              <div className="bg-[#F8F9FA] rounded-2xl p-4 border border-gray-200/80 flex flex-col sm:flex-row items-center justify-between gap-3.5">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#F4D014] text-[#1C1C1C] flex items-center justify-center font-black shrink-0 shadow-xs">
-                    <Sparkles size={20} />
-                  </div>
-                  <div>
-                    <h4 className="font-sans text-[14px] font-bold text-[#1C1C1C]">
-                      NetroAI Wealth Advisor
-                    </h4>
-                    <p className="text-[11.5px] text-gray-600">
-                      {isWalletConnected
-                        ? `Audit complete for ${fullAddress?.slice(0, 6)}...${fullAddress?.slice(-4)}. Native BNB reserve is verified on BSC.`
-                        : "Connect your BSC Web3 wallet to receive an automated AI on-chain risk audit."}
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleDeepAudit}
-                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#1C1C1C] hover:bg-black text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer shrink-0 active:scale-95"
-                >
-                  <span>Ask NetroAI Deep Audit</span>
-                  <ArrowRight size={13} />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer Bar */}
-          <div className="bg-white px-6 py-3 border-t border-gray-200 flex items-center justify-between text-xs text-gray-500 shrink-0">
-            <span>Powered by NetroAI Asset Intelligence &bull; Binance Agent OS</span>
-            <button
-              onClick={onClose}
-              className="px-4 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-[#1C1C1C] font-semibold transition-colors cursor-pointer"
-            >
-              Close
-            </button>
-          </div>
-        </motion.div>
+          </main>
+        </div>
       </div>
-    </AnimatePresence>
+    </div>
   );
 };
