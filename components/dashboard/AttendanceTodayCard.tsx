@@ -8,11 +8,11 @@ export const AttendanceTodayCard: React.FC = () => {
   const { selectedCoin, setSelectedCoinBySymbol, liveMarket } = useCrypto();
   const [showModeDropdown, setShowModeDropdown] = useState(false);
   const [metrics, setMetrics] = useState({
-    volume24h: "$191.8 M",
-    netInflow: "+$14.2 M",
-    whaleDelta: "+84.2 K",
-    vwap: "$99.72 Spot",
-    score: "78 / 100",
+    volume24h: "$1.21 B",
+    netInflow: "+18.4 M",
+    whaleDelta: "+12.4 K",
+    vwap: "$751.40 Spot",
+    score: "84 / 100",
   });
 
   const quickAssets = ["BNB | USDT", "BTC | USDT", "ETH | USDT", "SOL | USDT", "TON | USDT", "AVAX | USDT"];
@@ -25,7 +25,7 @@ export const AttendanceTodayCard: React.FC = () => {
     async function fetchLiveTelemetry() {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        const timeoutId = setTimeout(() => controller.abort(), 2500);
         const res = await fetch(`/api/v1/assets/${symbol}/analysis`, {
           signal: controller.signal,
         });
@@ -34,22 +34,52 @@ export const AttendanceTodayCard: React.FC = () => {
           const data = await res.json();
           const rawVol = data.market?.volume_usd ?? data.market?.volume ?? data.market?.total_volume;
           const volNum = Number(rawVol);
-          const fallbackVol = Number(liveMarket.volume24h) || 191800000;
-          const volM = !isNaN(volNum) && volNum > 0 ? (volNum / 1_000_000).toFixed(1) : (fallbackVol / 1_000_000).toFixed(1);
+          let volFormatted = "$1.21 B";
+          if (!isNaN(volNum) && volNum > 0) {
+            volFormatted = volNum >= 1e9
+              ? `$${(volNum / 1e9).toFixed(2)} B`
+              : `$${(volNum / 1e6).toFixed(1)} M`;
+          }
 
-          const rawNet = data.accumulation_distribution?.net_flow_usd ?? 14200000;
-          const netM = (Number(rawNet) / 1_000_000).toFixed(1);
+          const rawNet = data.accumulation_distribution?.net_flow_usd;
+          const netNum = Number(rawNet);
+          let netFormatted = "+18.4 M";
+          if (!isNaN(netNum)) {
+            const sign = netNum >= 0 ? "+" : "-";
+            const abs = Math.abs(netNum);
+            const val = abs >= 1e9
+              ? `${(abs / 1e9).toFixed(2)} B`
+              : abs >= 1e6
+              ? `${(abs / 1e6).toFixed(1)} M`
+              : `${(abs / 1e3).toFixed(1)} K`;
+            netFormatted = `${sign}${val}`;
+          }
 
-          const rawWhale = data.holder_concentration?.whale_net_flow_24h ?? 84200;
-          const whaleK = (Number(rawWhale) / 1_000).toFixed(1);
+          const rawWhale = data.holder_concentration?.whale_net_flow_24h;
+          const whaleNum = Number(rawWhale);
+          let whaleFormatted = "+12.4 K";
+          if (!isNaN(whaleNum)) {
+            if (whaleNum >= 1_000_000) {
+              whaleFormatted = `+${(whaleNum / 1_000_000).toFixed(1)} M`;
+            } else if (whaleNum >= 1000) {
+              whaleFormatted = `+${(whaleNum / 1000).toFixed(1)} K`;
+            } else {
+              whaleFormatted = `+${whaleNum.toLocaleString()}`;
+            }
+          }
 
           const vwapPrice = Number(data.cost_basis?.weighted_avg_acquisition_price ?? data.market?.last_price ?? liveMarket.price ?? 0);
+          const vwapFormatted = vwapPrice >= 1000
+            ? `$${vwapPrice.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Spot`
+            : vwapPrice >= 1
+            ? `$${vwapPrice.toFixed(2)} Spot`
+            : `$${vwapPrice.toFixed(4)} Spot`;
 
           setMetrics({
-            volume24h: `$${volM} M`,
-            netInflow: `+${netM} M`,
-            whaleDelta: `+${whaleK} K`,
-            vwap: `$${vwapPrice >= 1000 ? vwapPrice.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : vwapPrice.toFixed(2)} Spot`,
+            volume24h: volFormatted,
+            netInflow: netFormatted,
+            whaleDelta: whaleFormatted,
+            vwap: vwapFormatted,
             score: `${data.overall_score || 78} / 100`,
           });
           return;
@@ -59,14 +89,34 @@ export const AttendanceTodayCard: React.FC = () => {
       }
 
       if (isMounted) {
-        const fallbackVol = Number(liveMarket.volume24h) || 191800000;
-        const fallbackPrice = Number(liveMarket.price) || 0;
+        const fallbackPrice = Number(liveMarket.price) || selectedCoin.fallbackPrice || 10;
+        let fallbackVol = 1210000000;
+        if (typeof liveMarket.volume24h === "string") {
+          const clean = liveMarket.volume24h.replace(/[^0-9.]/g, "");
+          const val = parseFloat(clean);
+          if (!isNaN(val)) {
+            if (liveMarket.volume24h.toUpperCase().includes("B")) {
+              fallbackVol = val * 1e9;
+            } else if (liveMarket.volume24h.toUpperCase().includes("M")) {
+              fallbackVol = val * 1e6;
+            }
+          }
+        }
+        const volFormatted = fallbackVol >= 1e9
+          ? `$${(fallbackVol / 1e9).toFixed(2)} B`
+          : `$${(fallbackVol / 1e6).toFixed(1)} M`;
+        const vwapFormatted = fallbackPrice >= 1000
+          ? `$${fallbackPrice.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Spot`
+          : fallbackPrice >= 1
+          ? `$${fallbackPrice.toFixed(2)} Spot`
+          : `$${fallbackPrice.toFixed(4)} Spot`;
+
         setMetrics({
-          volume24h: `$${(fallbackVol / 1_000_000).toFixed(1)} M`,
-          netInflow: "+$14.2 M",
-          whaleDelta: `+12.4 K ${symbol}`,
-          vwap: `$${fallbackPrice >= 1000 ? fallbackPrice.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : fallbackPrice.toFixed(2)} Spot`,
-          score: "78 / 100",
+          volume24h: volFormatted,
+          netInflow: "+14.2 M",
+          whaleDelta: `+12.4 K`,
+          vwap: vwapFormatted,
+          score: "80 / 100",
         });
       }
     }
@@ -77,7 +127,7 @@ export const AttendanceTodayCard: React.FC = () => {
       isMounted = false;
       clearInterval(interval);
     };
-  }, [selectedCoin.symbol, liveMarket.volume24h, liveMarket.price]);
+  }, [selectedCoin.symbol, liveMarket.volume24h, liveMarket.price, selectedCoin.fallbackPrice]);
 
   const activeAssetLabel = `${selectedCoin.symbol} | USDT`;
 

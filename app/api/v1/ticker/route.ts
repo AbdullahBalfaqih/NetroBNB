@@ -120,13 +120,15 @@ export async function GET(request: NextRequest) {
         const high = (p * (1 + Math.abs(chg) / 200 + 0.015)).toFixed(2);
         const low = (p * (1 - Math.abs(chg) / 200 - 0.015)).toFixed(2);
 
+        const baseVol = COIN_BASELINES[symbol]?.vol || Math.round(p * 1500000);
+
         return NextResponse.json({
           symbol: pair,
           lastPrice: p.toString(),
           priceChangePercent: chg.toFixed(2),
           highPrice: high,
           lowPrice: low,
-          quoteVolume: "1200000000",
+          quoteVolume: baseVol.toString(),
         });
       }
     }
