@@ -408,6 +408,14 @@ export const AskCoreAICard: React.FC = () => {
     });
   }, [messages, defaultSuggestions, selectedCoin.symbol]);
 
+  // Determine current active GIF state
+  let activeState: "normal" | "typing" | "thinking" = "normal";
+  if (isThinking) {
+    activeState = "thinking";
+  } else if (isTyping) {
+    activeState = "typing";
+  }
+
   const renderFormattedText = (text: string) => {
     const lines = text.split("\n");
     return (
@@ -511,11 +519,11 @@ export const AskCoreAICard: React.FC = () => {
           </div>
         </div>
 
-        {/* Scrollable Conversation Stream with internal scrolling and zero dashboard push */}
+        {/* Scrollable Conversation Stream starting at top with hidden WhatsApp-style scrollbar */}
         <div
-          className={`flex-1 overflow-y-auto py-2 space-y-2.5 min-h-0 pr-1 flex flex-col ${
+          className={`flex-1 overflow-y-auto py-2 space-y-2.5 min-h-0 flex flex-col ${
             messages.length === 0 ? "justify-center" : "justify-start"
-          } [scrollbar-width:thin] [scrollbar-color:rgba(0,0,0,0.2)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-black/20 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent`}
+          } no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden`}
         >
           {messages.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center p-3 my-auto select-none">
@@ -795,8 +803,12 @@ export const AskCoreAICard: React.FC = () => {
               </div>
             </div>
 
-            {/* Modal Message Stream */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-[#F3F4F6] no-scrollbar [scrollbar-width:none] flex flex-col justify-center">
+            {/* Modal Message Stream starting at top with hidden WhatsApp-style scrollbar */}
+            <div
+              className={`flex-1 overflow-y-auto p-5 space-y-4 bg-[#F3F4F6] no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden flex flex-col ${
+                messages.length === 0 ? "justify-center" : "justify-start"
+              }`}
+            >
               {messages.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-center p-6 my-auto select-none">
                   {/* Interactive Typing Welcoming Text Above Logo (Doubled size) */}
