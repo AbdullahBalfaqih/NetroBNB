@@ -95,16 +95,13 @@ export const ExpensesCard: React.FC = () => {
             <h3 className="font-sans text-[20px] text-white font-semibold leading-none">
               Portfolio Insights
             </h3>
-            <span className="text-[10px] bg-[#F4D014]/20 text-[#F4D014] font-bold px-2 py-0.5 rounded-full">
-              Live
-            </span>
           </div>
 
           <div className="flex items-center gap-1">
             <button
               onClick={() => setIsAnalysisModalOpen(true)}
               className="p-1 text-[#8D8A95] hover:text-[#F4D014] transition-colors cursor-pointer"
-              title="Analyse Financial Portfolio"
+              title="Analyse Portfolio"
             >
               <PieChart size={16} />
             </button>
@@ -152,14 +149,13 @@ export const ExpensesCard: React.FC = () => {
             />
           </div>
 
-          {/* Analyse Financial Portfolio CTA Button */}
+          {/* Analyse Portfolio CTA Button */}
           <div className="w-full flex flex-col gap-1.5">
             <button
               onClick={() => setIsAnalysisModalOpen(true)}
-              className="w-full bg-[#F4D014] hover:bg-[#e5c30f] text-[#1C1C1C] font-sans font-bold text-[13px] py-2 px-3 rounded-lg shadow-[0_4px_20px_rgba(244,208,20,0.25)] border border-yellow-400/40 cursor-pointer transition-all active:scale-95 flex items-center justify-center gap-1.5"
+              className="w-full bg-[#F4D014] hover:bg-[#e5c30f] text-[#1C1C1C] font-sans font-bold text-[13px] py-2 px-3 rounded-lg shadow-[0_4px_20px_rgba(244,208,20,0.25)] border border-yellow-400/40 cursor-pointer transition-all active:scale-95 flex items-center justify-center"
             >
-              <Sparkles size={14} className="text-[#1C1C1C]" />
-              <span>Analyse Financial Portfolio</span>
+              <span>Analyse Portfolio</span>
             </button>
 
             {isWalletConnected ? (

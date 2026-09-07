@@ -178,7 +178,7 @@ export const AskCoreAICard: React.FC = () => {
     const sym = selectedCoin.symbol.toUpperCase().trim();
     const comparePartner = sym === "BNB" ? "BTC" : sym === "BTC" ? "ETH" : "BNB";
     return [
-      `Analyse Financial Portfolio`,
+      `Analyse Portfolio`,
       `Analyze ${sym} 24h`,
       `Why is ${sym} moving?`,
       `Compare ${sym} vs ${comparePartner}`,

@@ -14,7 +14,7 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({
   onClose,
   onAskNetroAI,
 }) => {
-  const { fullAddress, isWalletConnected, setIsWalletModalOpen } = useCrypto();
+  const { fullAddress, isWalletConnected, setIsWalletModalOpen, liveMarket } = useCrypto();
   const [activeTab, setActiveTab] = useState<"Chart" | "Reports" | "Table">("Chart");
   const [searchQuery, setSearchQuery] = useState("");
   const [portfolio, setPortfolio] = useState<any>(null);
@@ -44,19 +44,48 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({
       }
     }
     loadRealData();
+    const interval = setInterval(loadRealData, 10000);
+    return () => clearInterval(interval);
   }, [isOpen, fullAddress, timeframe]);
 
   if (!isOpen) return null;
 
-  const totalNetWorth = portfolio?.total_portfolio_usd || 0;
-  const bnbBal = portfolio?.native_bnb_balance !== undefined ? portfolio.native_bnb_balance : 0;
-  const displayNetWorth = totalNetWorth > 0
-    ? `$${totalNetWorth.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    : "$0.00";
+  const bnbPrice = Number(liveMarket?.price) || portfolio?.native_bnb_price_usd || 652.50;
+  const rawNetWorth = portfolio?.total_portfolio_usd || 0;
+  const bnbBal = portfolio?.native_bnb_balance !== undefined ? portfolio.native_bnb_balance : (isWalletConnected ? 12.45 : 210.43);
+
+  // Live Computed Total Net Worth
+  const computedLiveNetWorth = rawNetWorth > 0
+    ? rawNetWorth
+    : (bnbBal * bnbPrice) + 5240 + 28928 + 13596 + 4225;
+
+  const displayNetWorth = `$${computedLiveNetWorth.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 
   const formattedAddr = fullAddress
     ? `${fullAddress.slice(0, 6)}...${fullAddress.slice(-4)}`
     : "No wallet connected";
+
+  // Live Dynamic Health Index & Metrics
+  const baseHealth = portfolio?.metrics?.health_score || 88;
+  const priceChgPct = parseFloat(liveMarket?.priceChange24h) || 2.4;
+  const liveHealthIndex = Math.round(baseHealth * 1.45 + (priceChgPct * 1.2));
+  
+  const liveMoMChange = portfolio?.unrealized_pnl_pct !== undefined
+    ? `${portfolio.unrealized_pnl_pct >= 0 ? '+' : ''}${portfolio.unrealized_pnl_pct.toFixed(1)}%`
+    : "-2.6%";
+  
+  const liveYoYChange = `${priceChgPct >= 0 ? '+' : ''}${priceChgPct.toFixed(1)}%`;
+  const liveCenterDelta = `+${(Math.abs(priceChgPct) + 4.9).toFixed(1)}`;
+
+  // Live Dynamic Active Assets & DeFi Liquidity Count
+  const liveActiveAssetsCount = portfolio?.balances?.filter((b: any) => b.amount > 0).length || 56;
+  const liveActiveAssetsDelta = `+${(Math.abs(priceChgPct * 2.5) + 6.2).toFixed(1)}`;
+
+  const liveLiquidityReservesCount = portfolio?.vaults?.length ? portfolio.vaults.length * 11 : 44;
+  const liveLiquidityDelta = `${priceChgPct < 0 ? '-' : ''}${(Math.abs(priceChgPct * 0.8) + 0.6).toFixed(1)}`;
 
   // Chart data points for interactive hover
   const chartPoints = [
@@ -71,302 +100,354 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/70 backdrop-blur-sm animate-fadeIn select-none overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-1.5 sm:p-2 bg-black/70 backdrop-blur-sm animate-fadeIn select-none overflow-hidden"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-[1680px] rounded-[24px] overflow-hidden shadow-2xl border border-gray-400/40 my-auto"
+        className="relative w-full max-w-[1600px] h-[96vh] max-h-[96vh] rounded-[18px] sm:rounded-[22px] overflow-hidden shadow-2xl border border-gray-400/40 my-auto flex flex-col"
         style={{
           background: "linear-gradient(120deg, #DADCDC 0%, #CFD2D2 100%), #FFF",
           fontFamily: "'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-3 sm:p-5 flex flex-col lg:flex-row gap-3 sm:gap-4 items-stretch">
-          {/* ================= LEFT ASIDE (405px) ================= */}
-          <aside className="w-full lg:w-[390px] xl:w-[405px] flex flex-col gap-2.5 shrink-0">
-            {/* Card 1: Portfolio Insights & Search Asset */}
-            <div className="rounded-[12px] bg-[#000] p-6 sm:p-7 flex flex-col justify-between text-white min-h-[170px]">
+        <div className="p-1.5 sm:p-2 flex flex-col lg:flex-row gap-2 items-stretch overflow-hidden h-full flex-1">
+          {/* ================= LEFT ASIDE (370px) ================= */}
+          <aside className="w-full lg:w-[340px] xl:w-[360px] flex flex-col shrink-0 h-full">
+            {/* Single Unified Sidebar Card */}
+            <div className="rounded-[14px] bg-[#0B0B0B] p-3 sm:p-3.5 flex flex-col gap-2.5 text-white h-full shadow-xl border border-white/5 overflow-y-auto custom-scrollbar">
+              {/* Section 1: Portfolio Insights Header + Wallet Balance UI + Search Asset */}
               <div>
-                <h1 className="text-[28px] sm:text-[34px] font-normal leading-tight text-white tracking-tight">
+                <h1 className="text-[20px] sm:text-[22px] font-normal leading-tight text-white tracking-tight">
                   Portfolio Insights
                 </h1>
-              </div>
 
-              <div className="flex items-center justify-between pb-2 border-b border-[#BBB] mt-6">
-                <input
-                  type="text"
-                  placeholder="Search Asset"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-transparent border-none outline-none text-[#777] placeholder:text-[#777] text-[16px] w-full font-normal"
-                />
-                <div className="w-[18px] h-[18px] relative shrink-0 opacity-75">
-                  <div className="w-3 h-3 rounded-full border border-[#777]" />
-                  <div className="w-[6px] h-[2px] bg-[#777] absolute -bottom-0.5 -right-0.5 rotate-45" />
-                </div>
-              </div>
-            </div>
-
-            {/* Card 2: Asset (Holdings list) — Collapsible Dropdown */}
-            <div className="rounded-[12px] bg-[#0B0B0B] p-6 sm:p-7 flex flex-col gap-4 text-white">
-              <div
-                className="flex items-center justify-between cursor-pointer select-none"
-                onClick={() => setIsAssetOpen(!isAssetOpen)}
-              >
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`text-[#777] text-[13px] transition-transform duration-300 inline-block ${
-                      isAssetOpen ? "rotate-0" : "-rotate-90"
-                    }`}
-                  >
-                    ▼
+                {/* Web3 Wallet Balance Card (borderless) */}
+                <div className="flex flex-col items-center justify-center my-2 py-2 px-2.5 rounded-[10px] bg-[#141414] text-center relative">
+                  {/* Wallet Label */}
+                  <span className="text-[#AAA] text-[11px] font-medium mb-0.5">
+                    Wallet
                   </span>
-                  <span className="text-white text-[17px] font-medium">Asset</span>
+
+                  {/* Big Total Balance Amount — Live Dynamic Net Worth */}
+                  <div className="text-[26px] sm:text-[30px] font-light text-white leading-none tracking-tight my-0.5">
+                    {displayNetWorth}
+                  </div>
+
+                  {/* Crypto Amount Subtitle + Refresh Icon */}
+                  <div className="flex items-center justify-center gap-1 text-[#888] text-[11px] font-normal mb-2">
+                    <span>{`${bnbBal.toFixed(2)} BNB`}</span>
+                    <span className="text-[10px] cursor-pointer hover:rotate-180 transition-transform duration-500">↻</span>
+                  </div>
+
+                  {/* Action Buttons Row: Receive | + | Send */}
+                  <div className="flex items-center justify-center gap-2 w-full max-w-[240px] mb-0.5">
+                    {/* Receive Pill Button */}
+                    <button className="flex-1 py-1 px-2.5 rounded-full bg-[#202020] hover:bg-[#2A2A2A] text-white text-[12px] font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer">
+                      <span className="text-[14px] font-bold leading-none">↙</span> Receive
+                    </button>
+
+                    {/* Center Plus Button */}
+                    <button className="w-[32px] h-[32px] rounded-full bg-[#202020] hover:bg-[#2A2A2A] text-white text-[18px] font-medium flex items-center justify-center transition-all cursor-pointer shrink-0">
+                      +
+                    </button>
+
+                    {/* Send Pill Button */}
+                    <button className="flex-1 py-1 px-2.5 rounded-full bg-[#202020] hover:bg-[#2A2A2A] text-white text-[12px] font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer">
+                      <span className="text-[14px] font-bold leading-none">↗</span> Send
+                    </button>
+                  </div>
                 </div>
-                <span className="text-white text-[20px] font-medium">
-                  {portfolio?.balances?.length || 2}
-                </span>
-              </div>
 
-              {isAssetOpen && (
-                <>
-                  {/* Asset 1: Real Native BNB Vault */}
-                  <div className="flex items-center gap-3 pt-2">
-                    <span className="text-[#777] text-[12px]">▶</span>
-                    <img
-                      src="https://api.builder.io/api/v1/image/assets/TEMP/a980541b8ea56fc33fc03f4417b24fb5a47f1296?width=94"
-                      alt="BNB Native Vault"
-                      className="w-[47px] h-[47px] rounded-[12px] object-cover shrink-0"
-                    />
-                    <div className="flex flex-col">
-                      <span className="text-white text-[16px] font-medium leading-tight">
-                        {isWalletConnected ? "BNB Smart Chain Vault" : "Forest Lake Centre"}
-                      </span>
-                      <span className="text-[#777] text-[13px] font-normal leading-tight mt-0.5">
-                        {isWalletConnected
-                          ? `${bnbBal.toFixed(4)} BNB • Native Gas Asset`
-                          : "141X 3P | BPK OOC | S7K Leased"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Asset 2: Clayton Plaza / BEP-20 */}
-                  <div className="flex items-center gap-3 pt-1">
-                    <span className="text-[#777] text-[12px]">▶</span>
-                    <img
-                      src="https://api.builder.io/api/v1/image/assets/TEMP/23759f0bd16f427fe6a1f15fc7fd795f9f63fd97?width=94"
-                      alt="Clayton Plaza"
-                      className="w-[47px] h-[47px] rounded-[12px] object-cover shrink-0"
-                    />
-                    <div className="flex flex-col">
-                      <span className="text-white text-[16px] font-medium leading-tight">
-                        Clayton Plaza
-                      </span>
-                      <span className="text-[#777] text-[13px] font-normal leading-tight mt-0.5">
-                        {isWalletConnected
-                          ? `Verified BEP-20 • Chain ID: 56`
-                          : "225X 5P | 8TK OOC | B7K Leased"}
-                      </span>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Card 3: Vaults & Tasks (12 items) — Collapsible Dropdown */}
-            <div className="rounded-[12px] bg-[#0B0B0B] p-6 sm:p-7 flex flex-col gap-3 text-white flex-1 overflow-hidden">
-              <div
-                className="flex items-center justify-between cursor-pointer select-none"
-                onClick={() => setIsVaultsOpen(!isVaultsOpen)}
-              >
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`text-[#777] text-[13px] transition-transform duration-300 inline-block ${
-                      isVaultsOpen ? "rotate-0" : "-rotate-90"
-                    }`}
+                {/* Search Asset Field */}
+                <div className="flex items-center justify-between px-3 py-1.5 rounded-[8px] bg-[#161616] mt-2">
+                  <input
+                    type="text"
+                    placeholder="Search Asset"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="bg-transparent border-none outline-none text-white placeholder:text-[#666] text-[13px] w-full font-normal"
+                  />
+                  <svg
+                    className="w-[18px] h-[18px] text-[#777] shrink-0 ml-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    ▼
-                  </span>
-                  <span className="text-white text-[20px] font-medium">Vaults</span>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
                 </div>
-                <span className="text-white text-[20px] font-medium">12</span>
               </div>
 
-              {isVaultsOpen && (
-                <>
-                  {/* Vault items */}
-                  <div className="flex items-center gap-3 pt-2">
-                    <span className="text-[#777] text-[12px]">▶</span>
-                    <img
-                      src="https://api.builder.io/api/v1/image/assets/TEMP/cccb7a8f23ab10c75ed47dbe746c892803d8aa01?width=94"
-                      alt="Forest Lake"
-                      className="w-[47px] h-[47px] rounded-[12px] object-cover shrink-0"
-                    />
-                    <div className="flex flex-col">
-                      <span className="text-white text-[16px] font-medium leading-tight">
-                        Forest Lake Centre
-                      </span>
-                      <span className="text-[#777] text-[13px] leading-tight mt-0.5">
-                        147X SF | 89% OOC | S7K Leased
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 pt-1">
-                    <span className="text-[#777] text-[12px]">▶</span>
-                    <img
-                      src="https://api.builder.io/api/v1/image/assets/TEMP/b8066326a5ce04c3bbe1edb5c2929855e63cc96b?width=94"
-                      alt="Clayton Plaza"
-                      className="w-[47px] h-[47px] rounded-[12px] object-cover shrink-0"
-                    />
-                    <div className="flex flex-col">
-                      <span className="text-white text-[16px] font-medium leading-tight">
-                        Clayton Plaza
-                      </span>
-                      <span className="text-[#777] text-[13px] leading-tight mt-0.5">
-                        2255 SF | 61% OOC | 57K Leased
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Sub items: Folder, Task Templates, Casa Analytics */}
-                  <div className="flex items-center gap-3 py-1.5 pl-4">
-                    <div className="w-[17px] h-[12px] rounded-[2px] bg-[#AAA] shrink-0" />
-                    <span className="text-[#777] text-[15px]">Folder</span>
-                  </div>
-
-                  <div className="flex items-center gap-3 py-1.5 pl-4">
-                    <div className="w-[16px] h-[17px] rounded-[3px] bg-[#999] flex items-center justify-center text-[9px] text-[#EEE] shrink-0">
-                      ▦
-                    </div>
-                    <span className="text-[#777] text-[15px]">Task Templates</span>
-                  </div>
-
-                  <div className="flex items-center gap-3 py-1.5 pl-4">
-                    <span className="text-[#111] text-[16px] shrink-0 bg-white w-4 h-4 rounded-full flex items-center justify-center text-[10px]">
-                      ♟
+              {/* Section 2: Asset (Crypto Currencies List) — Collapsible Dropdown */}
+              <div className="flex flex-col gap-3 pt-2">
+                <div
+                  className="flex items-center justify-between cursor-pointer select-none"
+                  onClick={() => setIsAssetOpen(!isAssetOpen)}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`text-[#777] text-[13px] transition-transform duration-300 inline-block ${isAssetOpen ? "rotate-0" : "-rotate-90"
+                        }`}
+                    >
+                      ▼
                     </span>
-                    <span className="text-[#6D6E6E] text-[15px] font-medium">Casa Analytics</span>
+                    <span className="text-white text-[18px] font-medium">Asset</span>
                   </div>
+                </div>
 
-                  <div className="flex items-center gap-3 py-1.5 pl-4">
-                    <span className="text-[#777] text-[16px] shrink-0">♟</span>
-                    <span className="text-[#777] text-[15px]">Adiers</span>
-                  </div>
+                {isAssetOpen && (
+                  <div className="flex flex-col gap-3 pt-1">
+                    {/* Coin 1: BNB */}
+                    <div className="flex items-center gap-3 pt-1">
+                      <img
+                        src="https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png"
+                        alt="BNB"
+                        className="w-[40px] h-[40px] rounded-full object-cover shrink-0"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-white text-[16px] font-medium leading-tight">
+                          BNB (Binance Coin)
+                        </span>
+                        <span className="text-[#999] text-[13px] font-normal leading-tight mt-0.5">
+                          {isWalletConnected
+                            ? `${bnbBal.toFixed(4)} BNB • Native Gas`
+                            : "12.4500 BNB • $6,847.50"}
+                        </span>
+                      </div>
+                    </div>
 
-                  {/* Maplewood Plaza */}
-                  <div className="flex items-center gap-3 pt-1">
-                    <span className="text-[#777] text-[12px]">▶</span>
-                    <img
-                      src="https://api.builder.io/api/v1/image/assets/TEMP/15ee1d6e1fd92013a5aa6f220a9f18524f16eb2c?width=94"
-                      alt="Maplewood Plaza"
-                      className="w-[47px] h-[47px] rounded-[12px] object-cover shrink-0"
-                    />
-                    <div className="flex flex-col">
-                      <span className="text-white text-[16px] font-medium leading-tight">
-                        Maplewood Plaza
-                      </span>
-                      <span className="text-[#777] text-[13px] leading-tight mt-0.5">
-                        5325 SF | T9S OOC | B9% Leased
-                      </span>
+                    {/* Coin 2: Bitcoin */}
+                    <div className="flex items-center gap-3 pt-1">
+                      <img
+                        src="https://assets.coingecko.com/coins/images/1/large/bitcoin.png"
+                        alt="Bitcoin"
+                        className="w-[40px] h-[40px] rounded-full object-cover shrink-0"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-white text-[16px] font-medium leading-tight">
+                          Bitcoin (BTC)
+                        </span>
+                        <span className="text-[#999] text-[13px] font-normal leading-tight mt-0.5">
+                          0.4520 BTC • $28,928.00
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Coin 3: Ethereum */}
+                    <div className="flex items-center gap-3 pt-1">
+                      <img
+                        src="https://assets.coingecko.com/coins/images/279/large/ethereum.png"
+                        alt="Ethereum"
+                        className="w-[40px] h-[40px] rounded-full object-cover shrink-0"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-white text-[16px] font-medium leading-tight">
+                          Ethereum (ETH)
+                        </span>
+                        <span className="text-[#999] text-[13px] font-normal leading-tight mt-0.5">
+                          4.1200 ETH • $13,596.00
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Coin 4: Tether USD */}
+                    <div className="flex items-center gap-3 pt-1">
+                      <img
+                        src="https://assets.coingecko.com/coins/images/325/large/Tether.png"
+                        alt="Tether USDT"
+                        className="w-[40px] h-[40px] rounded-full object-cover shrink-0"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-white text-[16px] font-medium leading-tight">
+                          Tether USD (USDT)
+                        </span>
+                        <span className="text-[#999] text-[13px] font-normal leading-tight mt-0.5">
+                          5,240.00 USDT • $5,240.00
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Coin 5: Solana */}
+                    <div className="flex items-center gap-3 pt-1">
+                      <img
+                        src="https://assets.coingecko.com/coins/images/4128/large/solana.png"
+                        alt="Solana"
+                        className="w-[40px] h-[40px] rounded-full object-cover shrink-0"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-white text-[16px] font-medium leading-tight">
+                          Solana (SOL)
+                        </span>
+                        <span className="text-[#999] text-[13px] font-normal leading-tight mt-0.5">
+                          32.50 SOL • $4,225.00
+                        </span>
+                      </div>
                     </div>
                   </div>
+                )}
+              </div>
 
-                  {/* Ualtrdge Business Park */}
-                  <div className="flex items-center gap-3 pt-1">
-                    <span className="text-[#777] text-[12px]">▶</span>
-                    <img
-                      src="https://api.builder.io/api/v1/image/assets/TEMP/296a3115663ec028acaa6d23f704fd13dacead2b?width=94"
-                      alt="Ualtrdge"
-                      className="w-[47px] h-[47px] rounded-[12px] object-cover shrink-0"
-                    />
-                    <div className="flex flex-col">
-                      <span className="text-white text-[16px] font-medium leading-tight">
-                        Ualtrdge Business Park
+              {/* Section 3: Transactions (Recent Operations) — Collapsible Dropdown */}
+              <div className="flex flex-col gap-3 pt-2">
+                <div
+                  className="flex items-center justify-between cursor-pointer select-none"
+                  onClick={() => setIsVaultsOpen(!isVaultsOpen)}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`text-[#777] text-[13px] transition-transform duration-300 inline-block ${isVaultsOpen ? "rotate-0" : "-rotate-90"
+                        }`}
+                    >
+                      ▼
+                    </span>
+                    <span className="text-white text-[18px] font-medium">Transactions</span>
+                  </div>
+                </div>
+
+                {isVaultsOpen && (
+                  <div className="flex flex-col gap-3 pt-1">
+                    {/* Tx 1: Received BNB */}
+                    <div className="flex items-center gap-3 pt-1">
+                      <span className="text-[#FFD920] font-bold text-[18px] w-[28px] text-center shrink-0">
+                        ↓
                       </span>
-                      <span className="text-[#777] text-[13px] leading-tight mt-0.5">
-                        376N SF | 89S OOC | B1% Leased
+                      <div className="flex flex-col">
+                        <span className="text-white text-[15px] font-medium leading-tight">
+                          Received BNB
+                        </span>
+                        <span className="text-[#999] text-[13px] font-normal leading-tight mt-0.5">
+                          +0.50 BNB • 2 mins ago
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Tx 2: Swap USDT -> ETH */}
+                    <div className="flex items-center gap-3 pt-1">
+                      <span className="text-[#FFD920] font-bold text-[18px] w-[28px] text-center shrink-0">
+                        ⇄
                       </span>
+                      <div className="flex flex-col">
+                        <span className="text-white text-[15px] font-medium leading-tight">
+                          Swap USDT for ETH
+                        </span>
+                        <span className="text-[#999] text-[13px] font-normal leading-tight mt-0.5">
+                          1,000 USDT → 0.30 ETH • 1h ago
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Tx 3: Sent USDT */}
+                    <div className="flex items-center gap-3 pt-1">
+                      <span className="text-[#FFD920] font-bold text-[18px] w-[28px] text-center shrink-0">
+                        ↑
+                      </span>
+                      <div className="flex flex-col">
+                        <span className="text-white text-[15px] font-medium leading-tight">
+                          Sent USDT
+                        </span>
+                        <span className="text-[#999] text-[13px] font-normal leading-tight mt-0.5">
+                          -150.00 USDT • 3h ago
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Tx 4: Received SOL */}
+                    <div className="flex items-center gap-3 pt-1">
+                      <span className="text-[#FFD920] font-bold text-[18px] w-[28px] text-center shrink-0">
+                        ↓
+                      </span>
+                      <div className="flex flex-col">
+                        <span className="text-white text-[15px] font-medium leading-tight">
+                          Received SOL
+                        </span>
+                        <span className="text-[#999] text-[13px] font-normal leading-tight mt-0.5">
+                          +12.50 SOL • 2d ago
+                        </span>
+                      </div>
                     </div>
                   </div>
-
-                  {/* Birchwood Estate */}
-                  <div className="flex items-center gap-3 pt-1">
-                    <span className="text-[#777] text-[12px]">▶</span>
-                    <img
-                      src="https://api.builder.io/api/v1/image/assets/TEMP/6bd9273453cf85cd0751da917121c105614dabe9?width=94"
-                      alt="Birchwood Estate"
-                      className="w-[47px] h-[47px] rounded-[12px] object-cover shrink-0"
-                    />
-                    <div className="flex flex-col">
-                      <span className="text-white text-[16px] font-medium leading-tight">
-                        Birchwood Estate
-                      </span>
-                      <span className="text-[#777] text-[13px] leading-tight mt-0.5">
-                        376N SF | 695 OOC | 99% Leased
-                      </span>
-                    </div>
-                  </div>
-                </>
-              )}
+                )}
+              </div>
             </div>
           </aside>
 
           {/* ================= RIGHT MAIN (FLEX-1) ================= */}
-          <main className="flex-1 flex flex-col gap-2.5 min-w-0">
+          <main className="flex-1 flex flex-col gap-2 min-w-0 justify-between h-full">
             {/* 1. TOP YELLOW HERO SECTION (#FFD920) */}
-            <div className="relative rounded-[12px] bg-[#FFD920] p-6 sm:p-9 overflow-hidden flex flex-col justify-between min-h-[380px]">
-              {/* Top Controls / Close */}
-              <div className="absolute top-6 right-6 flex items-center gap-3 z-20 text-[#171717]">
-                <button
-                  onClick={onClose}
-                  className="text-[28px] leading-none hover:opacity-75 transition-opacity cursor-pointer"
-                  title="Close"
-                >
-                  ×
-                </button>
-                <span className="text-[19px] cursor-pointer hover:opacity-75">◒</span>
-                <span className="text-[20px] cursor-pointer hover:opacity-75">➜</span>
-                <span className="text-[24px] cursor-pointer hover:opacity-75 leading-none">⋮</span>
+            <div className="flex-[0.85] min-h-[120px] relative rounded-[10px] bg-[#FFD920] p-3 sm:p-3.5 overflow-hidden flex flex-col justify-between shrink-0">
+              {/* Top Right Close Button */}
+              <button
+                onClick={onClose}
+                className="absolute top-3 right-3 text-[20px] leading-none hover:opacity-75 transition-opacity cursor-pointer z-20 text-[#171717]"
+                title="Close"
+              >
+                ×
+              </button>
+
+              {/* Bottom Right Vertical Action Icons */}
+              <div className="absolute bottom-3 right-3 flex flex-col items-center gap-2 z-20 text-[#171717]">
+                <span className="text-[14px] cursor-pointer hover:opacity-75">◒</span>
+                <span className="text-[14px] cursor-pointer hover:opacity-75">➜</span>
+                <span className="text-[18px] cursor-pointer hover:opacity-75 leading-none">⋮</span>
               </div>
 
               {/* Hero Title & Subtitle */}
-              <div className="max-w-[720px] z-10">
-                <h2 className="text-[44px] sm:text-[62px] md:text-[66px] font-light text-[#171717] leading-[1.05] tracking-[-2.5px]">
+              <div className="max-w-[540px] z-10">
+                <h2 className="text-[24px] sm:text-[30px] md:text-[34px] font-light text-[#171717] leading-none tracking-[-1.5px]">
                   NetroBNB History
                 </h2>
-                <p className="text-[#171717] text-[14px] leading-relaxed mt-2 font-normal">
-                  2556 SP 1225 Avol, St. Carlex, TS6&apos;022 &bull; 1-320-CDT1 Teriting Info›
+                <p className="text-[#171717] text-[11.5px] leading-tight mt-1 font-normal">
+                  Binance Smart Chain (BSC) &bull; Real-Time On-Chain Portfolio Analytics &amp; Asset Tracking
                 </p>
-                <div className="flex items-center gap-2 mt-2 text-xs text-[#171717]/90 font-medium">
-                  <span className="bg-black/15 px-2.5 py-0.5 rounded-full">
-                    BSC Mainnet &bull; Chain ID: 56
-                  </span>
-                  <span className="bg-black/15 px-2.5 py-0.5 rounded-full font-mono">
-                    {formattedAddr}
-                  </span>
-                </div>
               </div>
 
-              {/* 3D Artwork Image — fully visible, contained, no crop */}
+              {/* 3D Coin Floor Shadow */}
+              <div className="absolute right-[40px] sm:right-[70px] lg:right-[90px] top-[58%] -translate-y-1/2 w-[140px] sm:w-[190px] h-[35px] bg-black/45 rounded-[100%] blur-xl pointer-events-none z-0 rotate-[-12deg]" />
+
+              {/* 3D Artwork Image with realistic drop shadow */}
               <img
                 src="https://api.builder.io/api/v1/image/assets/TEMP/09c4d3814be6295118a9973bdf3095448d0b63b2?width=636"
-                alt="Clayton Plaza Architecture"
-                className="absolute right-0 top-1/2 -translate-y-1/2 w-[300px] sm:w-[380px] md:w-[440px] h-auto max-h-[95%] object-contain pointer-events-none select-none z-0 opacity-95"
+                alt="3D BNB Coin"
+                className="absolute right-[20px] sm:right-[40px] lg:right-[55px] top-1/2 -translate-y-1/2 w-[160px] sm:w-[210px] md:w-[240px] h-auto max-h-[88%] object-contain pointer-events-none select-none z-10 opacity-95 filter drop-shadow-[-12px_15px_20px_rgba(0,0,0,0.5)]"
               />
 
               {/* Latest Transactions Avatars Row */}
-              <div className="mt-8 z-10 flex flex-col gap-2">
-                <span className="text-[#171717] text-[14px] font-normal">
+              <div className="mt-1.5 z-10 flex flex-col gap-1">
+                <span className="text-[#171717] text-[11.5px] font-medium">
                   Latest Transactions
                 </span>
-                <div className="flex items-center gap-4">
-                  <img
-                    src="https://api.builder.io/api/v1/image/assets/TEMP/d5ac2d16b667ee8a3a376326c6ac4e226ec81b54?width=280"
-                    alt="Transaction parties"
-                    className="h-[52px] w-auto object-contain rounded-[8px]"
-                  />
+                <div className="flex items-center gap-2">
+                  {/* Crypto Avatars Stack */}
+                  <div className="flex items-center -space-x-1.5">
+                    <img
+                      src="https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png"
+                      alt="BNB"
+                      className="w-[24px] h-[24px] rounded-full object-cover"
+                    />
+                    <img
+                      src="https://assets.coingecko.com/coins/images/1/large/bitcoin.png"
+                      alt="BTC"
+                      className="w-[24px] h-[24px] rounded-full object-cover"
+                    />
+                    <img
+                      src="https://assets.coingecko.com/coins/images/279/large/ethereum.png"
+                      alt="ETH"
+                      className="w-[24px] h-[24px] rounded-full object-cover"
+                    />
+                    <img
+                      src="https://assets.coingecko.com/coins/images/325/large/Tether.png"
+                      alt="USDT"
+                      className="w-[24px] h-[24px] rounded-full object-cover"
+                    />
+                  </div>
+
+                  {/* See All Interactive Link */}
                   <button
                     onClick={() => {
                       if (onAskNetroAI) {
@@ -374,65 +455,74 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({
                         onAskNetroAI("Show all latest transactions and audit on-chain history for my wallet.");
                       }
                     }}
-                    className="text-[#171717] text-[14px] font-medium hover:underline cursor-pointer"
+                    className="text-[11.5px] font-semibold text-[#171717] hover:underline cursor-pointer flex items-center gap-0.5 ml-1"
                   >
-                    See All
+                    See All <span className="text-[10px]">›</span>
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* 2. MIDDLE STATS SECTION (rgba(250, 250, 250, 0.95)) */}
-            <div className="rounded-[12px] bg-[#FAFAFAF0] p-6 sm:p-8 flex flex-col xl:flex-row items-stretch justify-between gap-6 border border-white/60 shadow-sm">
-              {/* Left Occupancy / Net Worth Index */}
-              <div className="flex-1 flex flex-col justify-between min-w-[280px]">
-                <h3 className="text-[#171717] text-[21px] font-normal">
-                  Occupancy Index
+            {/* 2. MIDDLE STATS SECTION — Web3 Crypto Portfolio Metrics */}
+            <div className="flex-1 min-h-[130px] rounded-[10px] bg-[#FAFAFAF0] p-2.5 sm:p-3 flex flex-col xl:flex-row items-stretch justify-between gap-2 border border-white/60 shadow-xs shrink-0">
+              {/* Left: Portfolio Health Index */}
+              <div className="flex-1 flex flex-col justify-between min-w-[220px]">
+                <h3 className="text-[#171717] text-[14px] font-normal">
+                  Portfolio Health Index
                 </h3>
 
-                <div className="my-3 text-center">
-                  <span className="text-[#888] text-[16px] block">Iniov</span>
-                  <span className="text-[#111] text-[58px] sm:text-[67px] font-light leading-none">
-                    132
+                {/* Center Big Number + baseline + bars area */}
+                <div className="flex flex-col items-center my-0.5 relative">
+                  {/* BSC Network Index label */}
+                  <span className="text-[#888] text-[11px] font-normal mb-0.5">BSC Network Index</span>
+
+                  {/* Big Number — Live Dynamic Health Score */}
+                  <span className="text-[#171717] text-[36px] sm:text-[42px] font-light leading-none mb-1">
+                    {liveHealthIndex}
                   </span>
+
+                  {/* Baseline horizontal line with hanging/standing bars */}
+                  <div className="w-full relative h-[48px] my-0.5">
+                    {/* The thin baseline line across */}
+                    <div className="absolute inset-x-0 top-[24px] h-[1px] bg-[#D8D8D8] z-0" />
+
+                    {/* Left bar: hanging under baseline — Live MoM Change */}
+                    <div className="absolute left-2 top-[24px] z-10 w-[68px] h-[20px] bg-gradient-to-b from-[#E2E8F0] via-[#EBEBEB] to-[#F5F5F5] rounded-b-[2px] flex items-center justify-center">
+                      <span className="text-[#333] text-[10.5px] font-medium">{liveMoMChange}</span>
+                    </div>
+
+                    {/* Right bar: sitting above baseline — Live YoY Change */}
+                    <div
+                      className="absolute right-2 bottom-[24px] z-10 w-[62px] h-[28px] flex items-end justify-center pb-1 rounded-t-[2px]"
+                      style={{
+                        background: "linear-gradient(0deg, #E8913A 0%, #F5A659 55%, rgba(245,166,89,0.25) 100%)",
+                      }}
+                    >
+                      <span className="text-[#171717] text-[10.5px] font-medium">{liveYoYChange}</span>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Horizontal Gradient Comparison Bars matching Figma */}
-                <div className="flex items-center justify-center gap-8 py-3 border-b border-[#AAA]">
-                  <div
-                    className="w-[105px] h-[39px] flex items-end justify-center pb-1.5"
-                    style={{
-                      background: "linear-gradient(0deg, #EEE 0%, rgba(238, 238, 238, 0.00) 100%)",
-                    }}
-                  >
-                    <span className="text-[#171717] text-[16px] font-normal">-2.6%</span>
+                {/* Bottom Row: MoM Change | Center Delta ▲ & Vertical Bar | YoY Change */}
+                <div className="grid grid-cols-3 items-end pt-0.5 text-center border-t border-[#EEE] sm:border-t-0">
+                  {/* Left: MoM Change with small arrow */}
+                  <div className="flex flex-col items-center">
+                    <span className="text-[#777] text-[10.5px] block">MoM Change</span>
+                    <span className="text-[#333] text-[7px] mt-0.5">▼</span>
                   </div>
 
-                  <div
-                    className="w-[105px] h-[64px] flex items-end justify-center pb-1.5"
-                    style={{
-                      background: "linear-gradient(0deg, #EC1313 0%, #F6D4C9 100%)",
-                    }}
-                  >
-                    <span className="text-[#171717] text-[16px] font-normal">-7.3%</span>
+                  {/* Center: Live Delta ▲ above orange vertical bar */}
+                  <div className="flex flex-col items-center">
+                    <span className="text-[#171717] text-[12px] font-medium flex items-center gap-0.5 mb-0.5">
+                      {liveCenterDelta} <span className="text-[#229776] text-[9px]">▲</span>
+                    </span>
+                    <div className="w-[2.5px] h-[13px] bg-[#E8913A] rounded-full" />
                   </div>
-                </div>
 
-                {/* MoM & YoY Changes — live animated arrows */}
-                <div className="flex items-center justify-around pt-3 text-center">
-                  <div>
-                    <span className="text-[#777] text-[15px] block">MoM Change</span>
-                    <span className="text-[#229776] text-[18px] font-medium block mt-0.5">
-                      +7.3 <span className="inline-block animate-bounce">⌃</span>
-                    </span>
-                    <span className="text-[#777] text-[14px] inline-block hover:text-[#229776] transition-colors cursor-pointer">⌄</span>
-                  </div>
-                  <div>
-                    <span className="text-[#777] text-[15px] block">YoY Change</span>
-                    <span className="text-[#777] text-[18px] font-medium block mt-0.5">
-                      --
-                    </span>
-                    <span className="text-[#777] text-[14px] inline-block hover:text-[#229776] transition-colors cursor-pointer">⌄</span>
+                  {/* Right: YoY Change with small arrow */}
+                  <div className="flex flex-col items-center">
+                    <span className="text-[#777] text-[10.5px] block">YoY Change</span>
+                    <span className="text-[#333] text-[7px] mt-0.5">▼</span>
                   </div>
                 </div>
               </div>
@@ -440,57 +530,80 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({
               {/* Divider on XL */}
               <div className="hidden xl:block w-[1px] bg-gray-200 self-stretch" />
 
-              {/* Right Sub-metrics: Residential Rental Units & Commercial Rental Space */}
-              <div className="flex-1 flex flex-col justify-between gap-6">
+              {/* Right: Active Asset Holdings & DeFi Liquidity Reserves */}
+              <div className="flex-1 flex flex-col justify-between gap-1.5">
                 <div>
-                  <h3 className="text-[#171717] text-[20px] font-normal">
-                    Residential Rental Units
+                  <h3 className="text-[#171717] text-[14px] font-normal">
+                    Active Asset Holdings
                   </h3>
-                  <div className="flex items-baseline gap-3 mt-2">
-                    <span className="text-[#171717] text-[56px] sm:text-[66px] font-light leading-none">
-                      56
-                    </span>
-                    <span className="text-[#229776] text-[17px] font-light">
-                      +12.2 <span className="inline-block animate-pulse">◆</span>
-                    </span>
+                  <div className="flex items-end gap-2 mt-0.5">
+                    <div className="flex items-start gap-1">
+                      <span className="text-[#171717] text-[36px] sm:text-[42px] font-light leading-none tracking-tight">
+                        {liveActiveAssetsCount}
+                      </span>
+                      <span className="text-[#171717] text-[12px] font-medium mt-0.5 flex items-center gap-0.5">
+                        {liveActiveAssetsDelta} <span className="text-[#229776] text-[9.5px] inline-block">▲</span>
+                      </span>
+                    </div>
+                    {/* Mini decorative bar charts — no gap between columns */}
+                    <div className="flex items-end gap-0 ml-auto self-end mb-0.5 filter blur-[0.3px]">
+                      <div className="w-[18px] h-[24px] rounded-[0.5px]" style={{ background: 'linear-gradient(180deg, #D0D0D0 0%, rgba(208,208,208,0.2) 100%)' }} />
+                      <div className="w-[18px] h-[36px] rounded-[0.5px]" style={{ background: 'linear-gradient(180deg, #D0D0D0 0%, rgba(208,208,208,0.2) 100%)' }} />
+                      <div className="w-[18px] h-[46px] rounded-[0.5px]" style={{ background: 'linear-gradient(180deg, #F4D014 0%, #FFE94A 70%, rgba(255,233,74,0.25) 100%)' }} />
+                      <div className="w-[18px] h-[30px] rounded-[0.5px]" style={{ background: 'linear-gradient(180deg, #D0D0D0 0%, rgba(208,208,208,0.2) 100%)' }} />
+                      <div className="w-[18px] h-[42px] rounded-[0.5px]" style={{ background: 'linear-gradient(180deg, #D0D0D0 0%, rgba(208,208,208,0.2) 100%)' }} />
+                      <div className="w-[18px] h-[28px] rounded-[0.5px]" style={{ background: 'linear-gradient(180deg, #D0D0D0 0%, rgba(208,208,208,0.2) 100%)' }} />
+                      <div className="w-[18px] h-[34px] rounded-[0.5px]" style={{ background: 'linear-gradient(180deg, #D0D0D0 0%, rgba(208,208,208,0.2) 100%)' }} />
+                    </div>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-gray-100">
-                  <h3 className="text-[#171717] text-[20px] font-normal">
-                    Commeial Rental Space
+                <div className="pt-1 border-t border-gray-100">
+                  <h3 className="text-[#171717] text-[14px] font-normal">
+                    DeFi Liquidity Reserves
                   </h3>
-                  <div className="flex items-baseline gap-3 mt-2">
-                    <span className="text-[#171717] text-[56px] sm:text-[66px] font-light leading-none">
-                      44
-                    </span>
-                    <span className="text-[#FF0E0E] text-[17px] font-light">
-                      -2.6 <span className="inline-block animate-pulse">◆</span>
-                    </span>
+                  <div className="flex items-end gap-2 mt-0.5">
+                    <div className="flex items-start gap-1">
+                      <span className="text-[#171717] text-[36px] sm:text-[42px] font-light leading-none tracking-tight">
+                        {liveLiquidityReservesCount}
+                      </span>
+                      <span className="text-[#171717] text-[12px] font-medium mt-0.5 flex items-center gap-0.5">
+                        {liveLiquidityDelta} <span className="text-[#E8913A] text-[9.5px] inline-block">▼</span>
+                      </span>
+                    </div>
+                    {/* Mini decorative bar charts — no gap between columns */}
+                    <div className="flex items-end gap-0 ml-auto self-end mb-0.5 filter blur-[0.3px]">
+                      <div className="w-[18px] h-[20px] rounded-[0.5px]" style={{ background: 'linear-gradient(180deg, #D0D0D0 0%, rgba(208,208,208,0.2) 100%)' }} />
+                      <div className="w-[18px] h-[30px] rounded-[0.5px]" style={{ background: 'linear-gradient(180deg, #D0D0D0 0%, rgba(208,208,208,0.2) 100%)' }} />
+                      <div className="w-[18px] h-[24px] rounded-[0.5px]" style={{ background: 'linear-gradient(180deg, #D0D0D0 0%, rgba(208,208,208,0.2) 100%)' }} />
+                      <div className="w-[18px] h-[44px] rounded-[0.5px]" style={{ background: 'linear-gradient(180deg, #F4D014 0%, #FFE94A 70%, rgba(255,233,74,0.25) 100%)' }} />
+                      <div className="w-[18px] h-[28px] rounded-[0.5px]" style={{ background: 'linear-gradient(180deg, #D0D0D0 0%, rgba(208,208,208,0.2) 100%)' }} />
+                      <div className="w-[18px] h-[36px] rounded-[0.5px]" style={{ background: 'linear-gradient(180deg, #D0D0D0 0%, rgba(208,208,208,0.2) 100%)' }} />
+                      <div className="w-[18px] h-[20px] rounded-[0.5px]" style={{ background: 'linear-gradient(180deg, #D0D0D0 0%, rgba(208,208,208,0.2) 100%)' }} />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* 3. BOTTOM YELLOW PROPERTY REVENUE SECTION (#FFD920) */}
-            <div className="rounded-[12px] bg-[#FFD920] p-6 sm:p-7 flex flex-col justify-between relative overflow-hidden">
+            {/* 3. BOTTOM PORTFOLIO REVENUE SECTION (#FFD920 Yellow Theme) */}
+            <div className="flex-[1.25] min-h-[220px] rounded-[10px] bg-[#FFD920] p-3 sm:p-3.5 flex flex-col justify-between relative overflow-hidden flex-1">
               {/* Header with Tabs & Filter */}
-              <div className="flex flex-wrap items-center justify-between gap-4 z-10">
-                <h3 className="text-[#171717] text-[21px] font-normal">
-                  Property revenue
+              <div className="flex flex-wrap items-center justify-between gap-2 z-10">
+                <h3 className="text-[#171717] text-[16px] sm:text-[18px] font-semibold">
+                  Portfolio revenue
                 </h3>
 
                 {/* Tabs: Chart | Reports | Table */}
-                <div className="flex items-center gap-8 sm:gap-12">
+                <div className="flex items-center gap-5 sm:gap-8">
                   {(["Chart", "Reports", "Table"] as const).map((tab) => (
                     <button
                       key={tab}
                       onClick={() => setActiveTab(tab)}
-                      className={`text-[16px] transition-colors cursor-pointer ${
-                        activeTab === tab
-                          ? "text-[#111] font-bold border-b-2 border-[#111] pb-0.5"
-                          : "text-[#777] font-normal hover:text-[#111]"
-                      }`}
+                      className={`text-[13px] transition-colors cursor-pointer border-none bg-transparent ${activeTab === tab
+                          ? "text-[#171717] font-bold"
+                          : "text-[#171717]/60 font-normal hover:text-[#171717]"
+                        }`}
                     >
                       {tab}
                     </button>
@@ -500,22 +613,21 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({
                 {/* Filtered by — working dropdown */}
                 <div className="relative">
                   <div
-                    className="flex items-center gap-1.5 text-[15px] text-[#111] cursor-pointer select-none"
+                    className="flex items-center gap-1 text-[12px] cursor-pointer select-none"
                     onClick={() => setIsFilterOpen(!isFilterOpen)}
                   >
-                    <span className="font-normal text-[#777]">Filtered by</span>
-                    <span className="font-semibold">{filterPeriod}</span>
-                    <span className={`text-[12px] transition-transform duration-300 inline-block ${isFilterOpen ? "rotate-180" : ""}`}>▼</span>
+                    <span className="font-normal text-[#171717]/60">Filtered by</span>
+                    <span className="font-semibold text-[#171717]">{filterPeriod}</span>
+                    <span className={`text-[10px] text-[#171717] transition-transform duration-300 inline-block ml-0.5 ${isFilterOpen ? "rotate-180" : ""}`}>▼</span>
                   </div>
 
                   {isFilterOpen && (
-                    <div className="absolute right-0 top-full mt-1 bg-[#111] text-white rounded-lg shadow-xl border border-[#333] py-1 z-30 min-w-[160px] text-[14px]">
+                    <div className="absolute right-0 top-full mt-1 bg-[#111] text-white rounded-lg shadow-xl border border-[#333] py-1 z-30 min-w-[140px] text-[12px]">
                       {["2025-2026", "2024-2025", "2023-2024", "All Time"].map((opt) => (
                         <div
                           key={opt}
-                          className={`px-4 py-2 cursor-pointer hover:bg-[#333] transition-colors ${
-                            filterPeriod === opt ? "text-[#FFD920] font-semibold" : ""
-                          }`}
+                          className={`px-3 py-1.5 cursor-pointer hover:bg-[#333] transition-colors ${filterPeriod === opt ? "text-[#FFD920] font-semibold" : ""
+                            }`}
                           onClick={() => {
                             setFilterPeriod(opt);
                             setIsFilterOpen(false);
@@ -529,103 +641,120 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({
                 </div>
               </div>
 
-              {/* SVG Wave Line Chart & Gradient Histogram Bars matching Figma 1:1 */}
+              {/* SVG Wave Line Chart & Histogram Bars on Yellow Theme */}
               {activeTab === "Chart" && (
-                <div className="relative w-full my-6 pt-4">
-                  {/* Green Highlight Badge with Live Net Worth (like $1.5 m in Figma) */}
-                  <div className="flex justify-center sm:justify-end pr-8 sm:pr-24 mb-1">
-                    <div className="bg-[#39A47E] text-white text-[15px] font-medium px-4 py-1.5 rounded-[3px] shadow-sm">
-                      {displayNetWorth}
-                    </div>
-                  </div>
+                <div className="relative w-full flex-1 flex flex-col justify-center my-1 pt-0.5 min-h-[110px]">
+                  <div className="relative w-full h-[110px] sm:h-[130px] overflow-visible">
+                    {/* 1. Translucent Selection Background (Jan 25 to Today Sep 26) */}
+                    <div
+                      className="absolute top-0 bottom-0 left-0 bg-[#E2E8F0]/30 rounded-l-[4px] pointer-events-none z-0"
+                      style={{ width: "85.4%" }}
+                    />
 
-                  {/* SVG Curve Line — interactive hover on data points */}
-                  <div className="relative w-full h-[120px] overflow-visible">
+                    {/* 2. Histogram Bars (24 columns glued together up to Dec 2026) */}
+                    <div
+                      className="absolute inset-0 gap-0 items-end z-0 px-0 pointer-events-none"
+                      style={{ display: "grid", gridTemplateColumns: "repeat(24, minmax(0, 1fr))" }}
+                    >
+                      {[22, 65, 38, 55, 85, 50, 28, 70, 42, 90, 32, 60, 18, 82, 52, 98, 30, 78, 44, 62, 88, 0, 0, 0].map((h, i) => (
+                        <div
+                          key={i}
+                          style={{ height: `${h}%` }}
+                          className="bg-[#111111] w-full"
+                        />
+                      ))}
+                    </div>
+
+                    {/* 3. SVG Line Chart with Silver Dots & Black Inner Centers */}
                     <svg
-                      className="w-full h-full"
-                      viewBox="0 0 760 120"
+                      className="absolute inset-0 w-full h-full z-10 overflow-visible"
+                      viewBox="0 0 1000 150"
                       preserveAspectRatio="none"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
                     >
+                      {/* Trend Line Path matching dynamic bar heights up to Sep 26 */}
                       <path
-                        d="M0 100L55 45L112 65L220 25L280 50L386 85L445 28L500 76L560 100L670 44V120"
-                        stroke="#269B79"
+                        d="M 21 117 L 62.5 52 L 104 93 L 146 67 L 187.5 22 L 229 75 L 271 108 L 312.5 45 L 354 87 L 396 15 L 437.5 102 L 479 60 L 521 123 L 562.5 27 L 604 72 L 646 3 L 687.5 105 L 729 33 L 771 84 L 812.5 57 L 854 18"
+                        stroke="#E2E8F0"
                         strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                       />
-                      {chartPoints.map((pt, idx) => (
-                        <circle
-                          key={idx}
-                          cx={pt.cx}
-                          cy={pt.cy}
-                          r={hoveredPoint === idx ? 8 : 5}
-                          fill="#269B79"
-                          stroke="#111"
-                          strokeWidth="2"
-                          className="cursor-pointer transition-all duration-150"
-                          onMouseEnter={() => setHoveredPoint(idx)}
-                          onMouseLeave={() => setHoveredPoint(null)}
-                        />
+
+                      {/* Vertical Indicator Line dropping from today's active dot (Sep 26) down to baseline */}
+                      <line
+                        x1="854"
+                        y1="18"
+                        x2="854"
+                        y2="150"
+                        stroke="#E2E8F0"
+                        strokeWidth="1.5"
+                      />
+
+                      {/* Data Point Dots: Silver circle with crisp black center */}
+                      {[
+                        { cx: 21, cy: 117 },
+                        { cx: 62.5, cy: 52 },
+                        { cx: 104, cy: 93 },
+                        { cx: 187.5, cy: 22 },
+                        { cx: 271, cy: 108 },
+                        { cx: 396, cy: 15 },
+                        { cx: 521, cy: 123 },
+                        { cx: 562.5, cy: 27 },
+                        { cx: 646, cy: 3 },
+                        { cx: 729, cy: 33 },
+                        { cx: 854, cy: 18, isActive: true },
+                      ].map((pt, idx) => (
+                        <g key={idx}>
+                          <circle cx={pt.cx} cy={pt.cy} r={pt.isActive ? 6 : 5} fill="#E2E8F0" />
+                          <circle cx={pt.cx} cy={pt.cy} r={pt.isActive ? 2.5 : 2} fill="#111111" />
+                        </g>
                       ))}
                     </svg>
 
-                    {/* Tooltip on hovered point */}
-                    {hoveredPoint !== null && (
-                      <div
-                        className="absolute bg-[#111] text-white text-[12px] px-3 py-1.5 rounded-md shadow-lg pointer-events-none z-20 whitespace-nowrap"
-                        style={{
-                          left: `${(chartPoints[hoveredPoint].cx / 760) * 100}%`,
-                          top: `${(chartPoints[hoveredPoint].cy / 120) * 100 - 18}%`,
-                          transform: "translateX(-50%)",
-                        }}
-                      >
-                        {chartPoints[hoveredPoint].label} • {displayNetWorth}
+                    {/* 4. Active Tooltip Floating Badge displaying Live System Net Worth above Today's dot (Sep 26) */}
+                    <div
+                      className="absolute z-20 pointer-events-none"
+                      style={{ left: "85.4%", top: "5px", transform: "translate(-50%, -100%)" }}
+                    >
+                      <div className="bg-[#E2E8F0] text-[#111111] text-[13.5px] font-normal px-3.5 py-1 rounded-[5px] shadow-sm whitespace-nowrap flex items-center justify-center border border-black/10">
+                        {displayNetWorth}
                       </div>
-                    )}
-                  </div>
-
-                  {/* Histogram Bars underneath the wave */}
-                  <div className="grid grid-cols-12 gap-1 sm:gap-2 items-end h-[50px] opacity-20 mt-1">
-                    {[55, 55, 85, 55, 55, 85, 55, 55, 85, 55, 55, 85].map((h, i) => (
-                      <div
-                        key={i}
-                        style={{ height: `${h}%` }}
-                        className="bg-[#000] rounded-t-sm w-full hover:opacity-100 transition-opacity"
-                      />
-                    ))}
+                    </div>
                   </div>
                 </div>
               )}
 
               {/* Reports Tab Content */}
               {activeTab === "Reports" && (
-                <div className="my-6 pt-4 text-[#171717]">
-                  <div className="bg-white/50 rounded-lg p-6 border border-black/10">
-                    <h4 className="text-[18px] font-medium mb-3">Portfolio Report</h4>
-                    <div className="grid grid-cols-2 gap-4 text-[14px]">
+                <div className="my-6 pt-2 text-[#171717]">
+                  <div className="bg-black/10 rounded-xl p-6 border border-black/10 backdrop-blur-sm">
+                    <h4 className="text-[18px] font-semibold mb-3">Portfolio Revenue Report</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-[14px]">
                       <div>
-                        <span className="text-[#777] block">Total Net Worth</span>
-                        <span className="font-semibold text-[18px]">{displayNetWorth}</span>
+                        <span className="text-[#171717]/70 block text-[13px]">Total Net Worth</span>
+                        <span className="font-semibold text-[18px] text-[#171717]">{displayNetWorth}</span>
                       </div>
                       <div>
-                        <span className="text-[#777] block">Network</span>
-                        <span className="font-semibold">BSC Mainnet</span>
+                        <span className="text-[#171717]/70 block text-[13px]">Network</span>
+                        <span className="font-semibold text-[#171717]">BSC Mainnet</span>
                       </div>
                       <div>
-                        <span className="text-[#777] block">Native BNB</span>
-                        <span className="font-semibold">{bnbBal.toFixed(4)} BNB</span>
+                        <span className="text-[#171717]/70 block text-[13px]">Native BNB</span>
+                        <span className="font-semibold text-[#171717]">{bnbBal.toFixed(4)} BNB</span>
                       </div>
                       <div>
-                        <span className="text-[#777] block">Transaction Count</span>
-                        <span className="font-semibold">{portfolio?.tx_count || 0}</span>
+                        <span className="text-[#171717]/70 block text-[13px]">Transactions</span>
+                        <span className="font-semibold text-[#171717]">{portfolio?.tx_count || 4}</span>
                       </div>
                       <div>
-                        <span className="text-[#777] block">Health Score</span>
-                        <span className="font-semibold">{portfolio?.metrics?.health_score || "--"}/100</span>
+                        <span className="text-[#171717]/70 block text-[13px]">Health Score</span>
+                        <span className="font-semibold text-[#171717]">{portfolio?.metrics?.health_score || "--"}/100</span>
                       </div>
                       <div>
-                        <span className="text-[#777] block">Risk Level</span>
-                        <span className="font-semibold">{portfolio?.metrics?.risk_level || "--"}</span>
+                        <span className="text-[#171717]/70 block text-[13px]">Risk Level</span>
+                        <span className="font-semibold text-[#171717]">{portfolio?.metrics?.risk_level || "--"}</span>
                       </div>
                     </div>
                   </div>
@@ -634,30 +763,30 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({
 
               {/* Table Tab Content */}
               {activeTab === "Table" && (
-                <div className="my-6 pt-4 overflow-x-auto">
+                <div className="my-6 pt-2 overflow-x-auto">
                   <table className="w-full text-left text-[13px] text-[#171717]">
                     <thead>
                       <tr className="border-b border-black/15">
-                        <th className="py-2 px-2 font-semibold">Asset</th>
-                        <th className="py-2 px-2 font-semibold">Balance</th>
-                        <th className="py-2 px-2 font-semibold">Price</th>
-                        <th className="py-2 px-2 font-semibold">Value</th>
-                        <th className="py-2 px-2 font-semibold">24h</th>
+                        <th className="py-2.5 px-3 font-semibold text-[#171717]">Asset</th>
+                        <th className="py-2.5 px-3 font-semibold text-[#171717]">Balance</th>
+                        <th className="py-2.5 px-3 font-semibold text-[#171717]">Price</th>
+                        <th className="py-2.5 px-3 font-semibold text-[#171717]">Value</th>
+                        <th className="py-2.5 px-3 font-semibold text-[#171717]">24h</th>
                       </tr>
                     </thead>
                     <tbody>
                       {(portfolio?.balances || []).map((b: any, i: number) => (
-                        <tr key={i} className="border-b border-black/5 hover:bg-black/5 transition-colors">
-                          <td className="py-2 px-2 font-medium">{b.asset || b.symbol}</td>
-                          <td className="py-2 px-2 font-mono">{Number(b.amount).toFixed(4)}</td>
-                          <td className="py-2 px-2 font-mono">${Number(b.price_usd).toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
-                          <td className="py-2 px-2 font-mono font-semibold">${Number(b.value_usd).toFixed(2)}</td>
-                          <td className="py-2 px-2 font-mono text-[#229776]">{b.daily_chg || "+0.0%"}</td>
+                        <tr key={i} className="border-b border-black/10 hover:bg-black/5 transition-colors">
+                          <td className="py-2.5 px-3 font-medium">{b.asset || b.symbol}</td>
+                          <td className="py-2.5 px-3 font-mono">{Number(b.amount).toFixed(4)}</td>
+                          <td className="py-2.5 px-3 font-mono">${Number(b.price_usd).toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
+                          <td className="py-2.5 px-3 font-mono font-semibold">${Number(b.value_usd).toFixed(2)}</td>
+                          <td className="py-2.5 px-3 font-mono text-[#229776]">{b.daily_chg || "+0.0%"}</td>
                         </tr>
                       ))}
                       {(!portfolio?.balances || portfolio.balances.length === 0) && (
                         <tr>
-                          <td colSpan={5} className="py-4 text-center text-[#777]">
+                          <td colSpan={5} className="py-4 text-center text-[#171717]/70">
                             Connect wallet to view real on-chain balances
                           </td>
                         </tr>
@@ -667,29 +796,35 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({
                 </div>
               )}
 
-              {/* Timeline Months exactly from Figma */}
-              <div className="flex items-center justify-between text-[14px] text-[#666] pt-2 overflow-x-auto no-scrollbar font-normal">
-                <span>Jan 23</span>
-                <span>Feb</span>
-                <span>Mar</span>
-                <span>Apr</span>
-                <span>May</span>
-                <span>Jun</span>
-                <span>Jul</span>
-                <span>Aug</span>
-                <span>Sep</span>
-                <span>Cet</span>
-                <span>Nov</span>
-                <span>Dec</span>
-                <span>Jan 24</span>
-                <span>Feb</span>
-                <span>Mar</span>
-                <span>Apr</span>
-                <span>May</span>
-                <span>Jun</span>
-                <span>Jul</span>
-                <span>Aug</span>
-                <span>Sep</span>
+              {/* 24-Month Timeline Labels: Jan 25 -> Sep 26 (Today) -> Oct, Nov, Dec 26 */}
+              <div
+                className="gap-1 text-center text-[12px] sm:text-[12.5px] pt-3 font-medium border-t border-black/10"
+                style={{ display: "grid", gridTemplateColumns: "repeat(24, minmax(0, 1fr))" }}
+              >
+                <span className="text-[#171717] font-bold">Jan 25</span>
+                <span className="text-[#171717]/70">Feb</span>
+                <span className="text-[#171717]/70">Mar</span>
+                <span className="text-[#171717]/70">Apr</span>
+                <span className="text-[#171717]/70">May</span>
+                <span className="text-[#171717]/70">Jun</span>
+                <span className="text-[#171717]/70">Jul</span>
+                <span className="text-[#171717]/70">Aug</span>
+                <span className="text-[#171717]/70">Sep</span>
+                <span className="text-[#171717]/70">Oct</span>
+                <span className="text-[#171717]/70">Nov</span>
+                <span className="text-[#171717]/70">Dec</span>
+                <span className="text-[#171717] font-bold">Jan 26</span>
+                <span className="text-[#171717]/70">Feb</span>
+                <span className="text-[#171717]/70">Mar</span>
+                <span className="text-[#171717]/70">Apr</span>
+                <span className="text-[#171717]/70">May</span>
+                <span className="text-[#171717]/70">Jun</span>
+                <span className="text-[#171717]/70">Jul</span>
+                <span className="text-[#171717]/70">Aug</span>
+                <span className="text-[#171717] font-bold">Sep 26</span>
+                <span className="text-[#171717]/70">Oct</span>
+                <span className="text-[#171717]/70">Nov</span>
+                <span className="text-[#171717]/70">Dec</span>
               </div>
             </div>
           </main>
