@@ -70,7 +70,7 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({
 
   // Live Dynamic Health Index & Metrics
   const baseHealth = portfolio?.metrics?.health_score || 88;
-  const priceChgPct = parseFloat(liveMarket?.priceChange24h) || 2.4;
+  const priceChgPct = parseFloat(liveMarket?.priceChange || "2.4") || 2.4;
   const liveHealthIndex = Math.round(baseHealth * 1.45 + (priceChgPct * 1.2));
   
   const liveMoMChange = portfolio?.unrealized_pnl_pct !== undefined
