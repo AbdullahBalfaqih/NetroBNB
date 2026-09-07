@@ -626,6 +626,13 @@ ${portfolioContext}`;
       active_asset: targetCoin,
       suggested_actions: suggestedActions,
       proposed_actions: proposedActions,
+      binance_agent_os: {
+        status: "active",
+        mcp_server: "/api/v1/mcp",
+        skill_hub: "/api/v1/agent/skills",
+        risk_config: "/api/v1/agent/config",
+        agentic_wallet: "/api/v1/agentic-wallet",
+      },
     });
   } catch (err: any) {
     console.error("Chat API Error details:", err);
