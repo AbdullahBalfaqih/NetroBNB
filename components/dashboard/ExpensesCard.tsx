@@ -129,9 +129,9 @@ export const ExpensesCard: React.FC = () => {
         </div>
 
         {/* Button / Top Allocation below the image */}
-        <div className="w-full flex items-center">
+        <div className="w-full flex items-center justify-center">
           {isWalletConnected ? (
-            <span className="w-full text-center bg-[#1A1A1A] text-[#F4D014] font-sans font-medium text-[13px] px-3 py-2 rounded-lg border border-[#F4D014]/30">
+            <span className="w-full text-center text-[#8D8A95] font-sans font-medium text-[13px] py-1.5 select-none">
               {portfolioData.topAllocation}
             </span>
           ) : (

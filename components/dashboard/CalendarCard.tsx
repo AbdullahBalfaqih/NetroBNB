@@ -474,13 +474,11 @@ export const CalendarCard: React.FC = () => {
             {connectWarning ? "Connect Wallet First" : "Swap Asset"}
           </button>
         ) : isInsufficientBalance ? (
-          <button
-            type="button"
-            disabled
-            className="w-full h-12.5 sm:h-13 rounded-xl bg-[#201D16] border border-[#F4D014]/30 text-[#E05563] font-sans font-semibold text-sm sm:text-base cursor-not-allowed opacity-90 mt-0.5"
+          <div
+            className="w-full h-12.5 sm:h-13 flex items-center justify-center text-[#E05563] font-sans font-medium text-sm sm:text-base select-none mt-0.5"
           >
             Insufficient {currentPayToken} Balance
-          </button>
+          </div>
         ) : (
           <button
             type="button"
