@@ -700,7 +700,7 @@ export const AskCoreAICard: React.FC = () => {
                     transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
                     className="text-[11px] text-[#1C1C1C]/75 font-medium ml-1"
                   >
-                    NetroAI يفكّر ويحلل الذاكرة والسياق...
+                    NetroAI is thinking and analyzing context...
                   </motion.span>
                 </div>
               </motion.div>
@@ -1020,7 +1020,7 @@ export const AskCoreAICard: React.FC = () => {
                       transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
                       className="text-xs text-gray-700 font-medium ml-1"
                     >
-                      NetroAI يفكّر ويسترجع الذاكرة والسياق...
+                      NetroAI is thinking and analyzing context...
                     </motion.span>
                   </div>
                 </motion.div>

@@ -315,7 +315,7 @@ export async function POST(request: NextRequest) {
       : [];
 
     if (!userMessage) {
-      return NextResponse.json({ answer: "مرحباً! كيف يمكنني مساعدتك في تحليل الأسواق الرقمية اليوم؟" });
+      return NextResponse.json({ answer: "Hello! How can I help you analyze crypto markets today?" });
     }
 
     // 1. Detect target coin & language
