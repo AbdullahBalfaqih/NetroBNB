@@ -53,7 +53,12 @@ export const Header: React.FC<HeaderProps> = ({ onOpenNewRequest }) => {
           return (
             <button
               key={item.name}
-              onClick={() => setActiveNav(item.name)}
+              onClick={() => {
+                setActiveNav(item.name);
+                if (item.name === "Portfolio") {
+                  window.dispatchEvent(new CustomEvent("open-portfolio-modal"));
+                }
+              }}
               className={`flex items-center gap-1 px-3.5 py-1 rounded-lg font-sans text-[16px] transition-all whitespace-nowrap cursor-pointer ${
                 isActive
                   ? "bg-[#F4D014] text-[#1C1C1C] font-semibold shadow-sm"

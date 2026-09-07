@@ -80,7 +80,7 @@ const TypewriterText: React.FC<TypewriterProps> = ({ phrases, className = "" }) 
 };
 
 export const AskCoreAICard: React.FC = () => {
-  const { selectedCoin, setSelectedCoinBySymbol, detectCoin, liveMarket } = useCrypto();
+  const { selectedCoin, setSelectedCoinBySymbol, detectCoin, liveMarket, fullAddress } = useCrypto();
 
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [prompt, setPrompt] = useState("");
@@ -173,17 +173,29 @@ export const AskCoreAICard: React.FC = () => {
     };
   }, []);
 
-  // Dynamic suggestions tailored to the currently active cryptocurrency (guaranteed distinct comparison partner)
+  // Dynamic suggestions tailored to the currently active cryptocurrency
   const defaultSuggestions = useMemo(() => {
     const sym = selectedCoin.symbol.toUpperCase().trim();
     const comparePartner = sym === "BNB" ? "BTC" : sym === "BTC" ? "ETH" : "BNB";
     return [
+      `Analyse Financial Portfolio`,
       `Analyze ${sym} 24h`,
       `Why is ${sym} moving?`,
-      `Inspect ${sym} Orderbook Depth`,
       `Compare ${sym} vs ${comparePartner}`,
     ];
   }, [selectedCoin.symbol]);
+
+  // Listen to external triggers (e.g. from PortfolioAnalysisModal or dashboard buttons)
+  useEffect(() => {
+    const handleCustomPrompt = (e: any) => {
+      const p = e.detail?.prompt;
+      if (p) {
+        sendMessage(p);
+      }
+    };
+    window.addEventListener("netroai-send-prompt", handleCustomPrompt);
+    return () => window.removeEventListener("netroai-send-prompt", handleCustomPrompt);
+  }, [messages, isThinking, selectedCoin, fullAddress]);
 
   // Preload GIFs
   useEffect(() => {
@@ -268,6 +280,7 @@ export const AskCoreAICard: React.FC = () => {
             conversation_id: conversationId,
             user_id: "default_user",
             active_asset: detected || selectedCoin.symbol,
+            wallet_address: fullAddress || null,
           }),
         });
         clearTimeout(timeoutId);
@@ -716,6 +729,7 @@ export const AskCoreAICard: React.FC = () => {
               {activeSuggestions.slice(0, 2).map((suggestion, sIdx) => {
                 const getSubtitle = (text: string) => {
                   const lower = text.toLowerCase();
+                  if (lower.includes("portfolio")) return "Portfolio AI";
                   if (lower.includes("24h") || lower.includes("trend")) return "24h Trend";
                   if (lower.includes("moving") || lower.includes("why") || lower.includes("whale") || lower.includes("flow")) return "Whale Flow";
                   if (lower.includes("depth") || lower.includes("orderbook")) return "Orderbook Depth";
@@ -1037,6 +1051,7 @@ export const AskCoreAICard: React.FC = () => {
                     {activeSuggestions.slice(0, 4).map((suggestion, sIdx) => {
                       const getSubtitle = (text: string) => {
                         const lower = text.toLowerCase();
+                        if (lower.includes("portfolio")) return "Portfolio AI";
                         if (lower.includes("24h") || lower.includes("trend")) return "24h Trend";
                         if (lower.includes("moving") || lower.includes("why") || lower.includes("whale") || lower.includes("flow")) return "Whale Flow";
                         if (lower.includes("depth") || lower.includes("orderbook")) return "Orderbook Depth";
